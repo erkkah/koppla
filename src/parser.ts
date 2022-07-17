@@ -1,21 +1,21 @@
 import { generate, Parser, SourceText } from "peggy";
 
 interface NumericValue {
-    type: "numericValue";
+    type: "NumericValue";
     value: number;
     prefix: string;
     unit: string;
 }
 
 interface SymbolicValue {
-    type: "symbolicValue";
+    type: "SymbolicValue";
     value: string;
 }
 
 export type Value = NumericValue | SymbolicValue;
 
 export interface Definition {
-    type: "definition";
+    type: "Definition";
     designator?: {
         designator: string;
         index: number;
@@ -26,14 +26,14 @@ export interface Definition {
 }
 
 interface Component {
-    type: "component";
+    type: "Component";
     open: string;
     definition: Definition;
     close: string;
 }
 
 interface Port {
-    type: "port";
+    type: "Port";
     identifier: "in" | "out" | "gnd" | "v";
     specifier?: string;
 }
@@ -45,23 +45,98 @@ interface Connection {
 }
 
 interface ConnectionStatement {
-    type: "connection";
+    type: "Connection";
     source: Component | Port;
     connections: Connection[];
 }
 
 type Statement = ConnectionStatement | Definition;
 
-export type Schematic = Statement[];
+export interface Schematic {
+    type: "Schematic";
+    body: Statement[];
+}
+
+function inArray(wanted: unknown, valid: string[]): boolean {
+    return valid.findIndex((x) => x === wanted) >= 0;
+}
+
+function validComponentDelimiters(start: string, end: string): boolean {
+    console.log(`start: ${start}, end: ${end}`);
+    switch (start) {
+        case "[":
+            return inArray(end, ["]", "|"]);
+        case "|":
+            return inArray(end, ["|", "]"]);
+        case ">":
+            return inArray(end, ["|", "]", "/"]);
+        case "(":
+            return end === ")";
+        case "$":
+            return end === "$";
+        case ":":
+            return end === ":";
+        case "/":
+            return end === "/";
+        default:
+            return false;
+    }
+}
 
 export function createParser(): Parser {
     const grammar = `
-    start = schematic
-    schematic = (connection / part)+
-    connection =
-        source:(component / port)
+    {{
+        ${inArray.toString()}
+        ${validComponentDelimiters.toString()}
+
+        function extractList(list, index) {
+            return list.map(function(element) { return element[index]; });
+        }
+
+        function buildList(head, tail, index) {
+            return [head].concat(extractList(tail, index));
+        }
+
+        function optionalList(value) {
+            return value !== null ? value : [];
+        }
+    }}
+
+    Start = WSC schematic:Schematic WSC {
+        return schematic;
+    }
+
+    Schematic = body:Elements? {
+        return {
+            type: "Schematic",
+            body: optionalList(body)
+        }
+    }
+
+    Elements = head:Element tail:(WSC Element)* {
+        return buildList(head, tail, 1);
+    }
+
+    Element = Connection / Part
+
+    WSC = (WhiteSpace / Comment)*
+
+    WhiteSpace = [ \\t\\r\\n]
+
+    EOL = [\\n\\r]
+
+    EOF = !.
+
+    Comment "comment" = MultiLineComment / SingleLineComment
+    MultiLineComment = CommentStart (!CommentEnd .)* CommentEnd
+    CommentStart "comment start" = "#*"
+    CommentEnd "comment end" = "*#"
+    SingleLineComment = "#" (!EOL .)*
+
+    Connection "connection" =
+        source:(Component / Port)
         connections:(
-            sourceTerminal:terminal? space wire space targetTerminal:terminal? target:(component / port) {
+            sourceTerminal:Terminal? Space Wire Space targetTerminal:Terminal? target:(Component / Port) {
                 return {
                     sourceTerminal,
                     target,
@@ -70,38 +145,46 @@ export function createParser(): Parser {
             }
         )* {
             return {
-                type: "connection",
+                type: "Connection",
                 source,
                 connections: connections ?? []
             };
         }
-    part = definition "\\n"
-    port = "<" id:identifier spec:portspecifier? ">" {
+    Part = definition:Definition EOL {
         return {
-            type: "port",
+            type: "Part",
+            definition
+        };
+    }
+    Port "port" = "<" id:Identifier spec:PortSpecifier? ">" {
+        return {
+            type: "Port",
             identifier: id,
             specifier: spec
         };
     }
-    portspecifier = ":" id: identifier {
+    PortSpecifier = ":" id:Identifier {
         return id;
     }
-    wire = "-"
-    terminal = character / [+-]
-    component = open:open space? definition:definition? space? close:close {
+    Wire = "-"
+    Terminal = Character / [+-]
+    Component = open:Open WSC definition:Definition? WSC close:Close {
+        if (!validComponentDelimiters(open, close)) {
+            error("Invalid component");
+        }
         return {
-            type: "component",
+            type: "Component",
             open,
             definition,
             close
         };
     }
-    open "component start" = "[" / "|" / ">" / "(" / "$" / ":" / "/"
-    close "component end" = "]" / "|" / "]" / ")" / "$" / ":" / "/"
-    definition =
+    Open "component start" = "[" / "|" / ">" / "(" / "$" / ":" / "/"
+    Close "component end" = "]" / "|" / "]" / ")" / "$" / ":" / "/"
+    Definition =
         designatorAndValue: (
             (
-                designator:designator space? ":" space? value: value {
+                designator:Designator WSC ":" WSC value: Value {
                     return {
                         designator,
                         value
@@ -110,55 +193,55 @@ export function createParser(): Parser {
             )
             /
             (
-                designator:designator {return {designator};}
+                designator:Designator {return {designator};}
                 /
-                value:value {return {value};}
+                value:Value {return {value};}
             )
         )?
-        space? symbol: ("!" id: identifier {return id;})?
-        space? description: description?
+        WSC symbol: ("!" id: Identifier {return id;})?
+        WSC description: Description?
         {
             return {
-                type: "definition",
+                type: "Definition",
                 ...designatorAndValue,
                 symbol,
                 description
             };
         }
-    designator = designator:alpha index:integer {
+    Designator = designator:Alpha index:Integer {
         return {
             designator,
             index: parseInt(index, 10),
         };
     }
-    value "value" = (value: decimal prefix: prefix? unit: unit? {
+    Value "value" = (value: Decimal prefix: Prefix? unit: Unit? {
         return {
-            type: "numericValue",
+            type: "NumericValue",
             value: parseFloat(value),
             prefix,
             unit
         };
-    }) / (value: identifier {
+    }) / (value: Identifier {
         return {
-            type: "symbolicValue",
+            type: "SymbolicValue",
             value
         };
     })
-    identifier "identifier" = $(alpha+ (integer alpha?)*)
-    description = quotedstring
+    Identifier "identifier" = $(Alpha+ (Integer Alpha?)*)
+    Description "description" = QuotedString
     
-    space "white space" = [ \\t]+
-    alpha = $character+
-    character = [a-z]i
-    quotedstring = '"' chars:stringcharacter* '"' {return chars && chars.join("");}
-    stringcharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
-    integer = $[0-9]+
-    decimal = $[0-9.]+
-    prefix = "p" / "n" / "u" / "m" / "k" / "M" / "G"
-    unit = alpha
+    Space "white space" = [ \\t\\n]+
+    Alpha = $Character+
+    Character = [a-z]i
+    QuotedString = '"' chars:StringCharacter* '"' {return chars && chars.join("");}
+    StringCharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
+    Integer = $[0-9]+
+    Decimal = $[0-9.]+
+    Prefix = "p" / "n" / "u" / "m" / "k" / "M" / "G"
+    Unit = Alpha
 `;
     try {
-        const parser = generate(grammar);
+        const parser = generate(grammar, { trace: true });
         return parser;
     } catch (err) {
         if ("format" in (err as Record<string, unknown>)) {
@@ -185,13 +268,13 @@ export function parse(source: string): Schematic {
     try {
         const parsed = parser.parse(source);
         return parsed as Schematic;
-    } catch(err) {
+    } catch (err) {
         if (err instanceof parser.SyntaxError) {
             throw err.format([
                 {
                     source: "input",
                     text: source,
-                }
+                },
             ]);
         }
         throw err;

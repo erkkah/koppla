@@ -1,6 +1,34 @@
 import assert = require("assert");
 import {createParser, parse, Definition, Value} from "./parser";
 
+describe("parse comments", () => {
+
+    it("parses single line comments", () => {
+        const source = `
+        # First comment
+        [R1] # Second comment
+        # Third comment
+        `;
+        const schematic = parse(source);
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
+        assert(connection.type === "Connection");
+    });
+
+    it("parses multi line comments", () => {
+        const source = `
+        #*
+        [R1] # Single line comment
+        *#
+        [R1]
+        `;
+        const schematic = parse(source);
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
+        assert(connection.type === "Connection");
+    });
+});
+
 describe("parse components", () => {
     const parser = createParser();
 
@@ -20,7 +48,7 @@ describe("parse components", () => {
     });
 
     it("fails to parse invalid component", () => {
-        const invalid = "#&"
+        const invalid = "/]"
         expect(() => {
             parser.parse(invalid);
         }).toThrow();
@@ -95,15 +123,15 @@ describe("parse connections", () => {
 describe("validate parsed structure", () => {
     test("single empty component", () => {
         const schematic = parse("[   ]");
-        expect(schematic).toHaveLength(1);
-        const [connection] = schematic;
-        assert(connection.type === "connection");
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
+        assert(connection.type === "Connection");
         expect(connection.connections).toHaveLength(0);
-        assert(connection.source.type === "component");
+        assert(connection.source.type === "Component");
         const source = connection.source;
         expect(source.open).toBe("[");
         expect(source.close).toBe("]");
-        expect(source.definition.type).toBe("definition");
+        expect(source.definition.type).toBe("Definition");
         const definition = source.definition;
         expect(definition.description).toBeNull();
         expect(definition.designator).toBeUndefined();
@@ -112,18 +140,18 @@ describe("validate parsed structure", () => {
 
     test("single complete component", () => {
         const schematic = parse("|C1:2.2nF !supercap \"A special cap\"|");
-        expect(schematic).toHaveLength(1);
-        const [connection] = schematic;
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
 
-        assert(connection.type === "connection");
+        assert(connection.type === "Connection");
         expect(connection.connections).toHaveLength(0);
 
-        assert(connection.source.type === "component");
+        assert(connection.source.type === "Component");
         const source = connection.source;
         expect(source.open).toBe("|");
         expect(source.close).toBe("|");
 
-        expect(source.definition.type).toBe("definition");
+        expect(source.definition.type).toBe("Definition");
         const definition = source.definition;
 
         const expectedDesignator: Definition["designator"] = {
@@ -133,7 +161,7 @@ describe("validate parsed structure", () => {
         expect(definition.designator).toStrictEqual(expectedDesignator);
 
         const expectedValue: Value = {
-            type: "numericValue",
+            type: "NumericValue",
             prefix: "n",
             unit: "F",
             value: 2.2,
@@ -147,11 +175,11 @@ describe("validate parsed structure", () => {
 
     test("simple connection", () => {
         const schematic = parse("<in:main> - [R12]");
-        expect(schematic).toHaveLength(1);
-        const [connection] = schematic;
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
 
-        assert(connection.type === "connection");
-        assert(connection.source.type === "port");
+        assert(connection.type === "Connection");
+        assert(connection.source.type === "Port");
         const source = connection.source;
         expect(source.identifier).toBe("in");
         expect(source.specifier).toBe("main");
@@ -162,7 +190,7 @@ describe("validate parsed structure", () => {
         expect(wire.sourceTerminal).toBeNull();
         expect(wire.targetTerminal).toBeNull();
 
-        assert(wire.target.type === "component");
+        assert(wire.target.type === "Component");
         expect(wire.target.open).toBe("[");
         expect(wire.target.close).toBe("]");
 
@@ -176,18 +204,18 @@ describe("validate parsed structure", () => {
 
     test("multiple step connection", () => {
         const schematic = parse("<in:main> - [R12] - -/U1:TL072/");
-        expect(schematic).toHaveLength(1);
-        const [connection] = schematic;
-        assert(connection.type === "connection");
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
+        assert(connection.type === "Connection");
         expect(connection.connections).toHaveLength(2);
 
         const lastConnection = connection.connections[1];
         expect(lastConnection.targetTerminal).toBe("-");
 
         const target = lastConnection.target;
-        assert(target.type === "component");
+        assert(target.type === "Component");
         expect(target.definition.value).toEqual({
-            type: "symbolicValue",
+            type: "SymbolicValue",
             value: "TL072"
         });
     });
