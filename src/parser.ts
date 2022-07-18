@@ -1,13 +1,13 @@
 import { generate, Parser, SourceText } from "peggy";
 
-interface NumericValue {
+export interface NumericValue {
     type: "NumericValue";
-    value: number;
+    value: string;
     prefix: string;
     unit: string;
 }
 
-interface SymbolicValue {
+export interface SymbolicValue {
     type: "SymbolicValue";
     value: string;
 }
@@ -25,32 +25,34 @@ export interface Definition {
     description?: string;
 }
 
-interface Component {
+export interface Component {
     type: "Component";
     open: string;
     definition: Definition;
     close: string;
 }
 
-interface Port {
+export interface Port {
     type: "Port";
     identifier: "in" | "out" | "gnd" | "v";
     specifier?: string;
 }
 
+export type Node = Component | Port;
+
 interface Connection {
     sourceTerminal?: string;
-    target: Component | Port;
+    target: Node;
     targetTerminal?: string;
 }
 
-interface ConnectionStatement {
+export interface ConnectionStatement {
     type: "Connection";
-    source: Component | Port;
+    source: Node;
     connections: Connection[];
 }
 
-type Statement = ConnectionStatement | Definition;
+export type Statement = ConnectionStatement | Definition;
 
 export interface Schematic {
     type: "Schematic";
@@ -217,7 +219,7 @@ export function createParser(): Parser {
     Value "value" = (value: Decimal prefix: Prefix? unit: Unit? {
         return {
             type: "NumericValue",
-            value: parseFloat(value),
+            value,
             prefix,
             unit
         };

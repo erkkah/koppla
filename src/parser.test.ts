@@ -164,7 +164,7 @@ describe("validate parsed structure", () => {
             type: "NumericValue",
             prefix: "n",
             unit: "F",
-            value: 2.2,
+            value: "2.2",
         };
 
         expect(definition.value).toStrictEqual(expectedValue);
