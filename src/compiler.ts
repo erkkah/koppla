@@ -9,6 +9,7 @@ import {
     Node,
     Value,
 } from "./parser";
+import { SymbolLibrary } from "./symbols";
 
 interface NodeID {
     ID: string;
@@ -42,8 +43,9 @@ export class CompiledSchematic {
     private components: Array<CompiledDefinition & { ID: NodeID }> = [];
     private connections: CompiledConnection[] = [];
     private unresolvedIndex = -1;
+    private resolved = false;
 
-    get nodes(): CompiledNode[] {
+    private getNodes(): CompiledNode[] {
         const portNodes: CompiledNode[] = this.ports.map((port) => ({
             ID: port.ID.ID,
             symbol: port.kind,
@@ -61,11 +63,21 @@ export class CompiledSchematic {
         return [...portNodes, ...componentNodes];
     }
 
-    get edges(): CompiledConnection[] {
-        return this.connections;
+    get nodes(): CompiledNode[] {
+        assert(this.resolved, "Must resolve before fetching nodes");
+
+        return this.getNodes();
+    }
+
+    get edges(): Required<CompiledConnection>[] {
+        assert(this.resolved, "Must resolve before fetching edges");
+
+        return this.connections as Required<CompiledConnection>[];
     }
 
     component(definition: CompiledDefinition): NodeID {
+        this.resolved = false;
+
         const designator = definition.designator;
         let resolved = true;
 
@@ -104,6 +116,8 @@ export class CompiledSchematic {
     }
 
     port(port: Port): NodeID {
+        this.resolved = false;
+
         const ID = portID(port);
         const nodeID: NodeID = {
             ID,
@@ -125,6 +139,8 @@ export class CompiledSchematic {
         sourceTerminal?: string,
         targetTerminal?: string
     ) {
+        this.resolved = false;
+
         this.connections.push({
             source,
             target,
@@ -133,7 +149,7 @@ export class CompiledSchematic {
         });
     }
 
-    resolve() {
+    resolve(symbols: SymbolLibrary) {
         const unresolved = this.components.filter((c) => !c.ID.resolved);
 
         const unresolvedByType = unresolved.reduce((map, c) => {
@@ -151,7 +167,9 @@ export class CompiledSchematic {
             const componentIndices = componentsOfType
                 .map((c) => c?.designator.index)
                 .filter((i) => i > 0);
-            const maxIndex = componentIndices.length ? Math.max(...componentIndices) : 0;
+            const maxIndex = componentIndices.length
+                ? Math.max(...componentIndices)
+                : 0;
             map[type] = maxIndex;
             return map;
         }, {} as Record<string, number>);
@@ -169,6 +187,38 @@ export class CompiledSchematic {
                 component.ID.resolved = true;
             }
         }
+
+        const nodes = this.getNodes();
+        const nodeSymbol = (ID: string) => {
+            const found = nodes.find((node) => node.ID === ID);
+            if (found) {
+                const symbolInfo = symbols.lookup(found.symbol);
+                if (symbolInfo === undefined) {
+                    throw new Error(
+                        `Symbol "${found.symbol}" not found for ${ID}`
+                    );
+                }
+                return symbolInfo;
+            }
+            assert(false, "Node not found while resolving connections");
+        };
+
+        for (const connection of this.connections) {
+            const sourceSymbol = nodeSymbol(connection.source.ID);
+            assert(sourceSymbol.terminals.length >= 2);
+            const sourceTerminal =
+                connection.sourceTerminal ?? sourceSymbol.terminals[1];
+
+            const targetSymbol = nodeSymbol(connection.target.ID);
+            assert(targetSymbol.terminals.length >= 1);
+            const targetTerminal =
+                connection.targetTerminal ?? targetSymbol.terminals[0];
+
+            connection.sourceTerminal = sourceTerminal;
+            connection.targetTerminal = targetTerminal;
+        }
+
+        this.resolved = true;
     }
 }
 
@@ -179,14 +229,17 @@ function portID(port: Port): string {
     return `${port.identifier}:${port.specifier}`;
 }
 
-export function compile(schematic: Schematic): CompiledSchematic {
+export function compile(
+    schematic: Schematic,
+    symbols: SymbolLibrary
+): CompiledSchematic {
     assert(schematic.type === "Schematic");
     const statements = schematic.body;
     const compiled = new CompiledSchematic();
     for (const statement of statements) {
         compileStatement(compiled, statement);
     }
-    compiled.resolve();
+    compiled.resolve(symbols);
     return compiled;
 }
 

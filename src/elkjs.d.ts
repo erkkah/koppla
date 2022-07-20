@@ -37,28 +37,15 @@ declare module 'elkjs' {
         x: number;
         y: number;
     }
-
-    interface PrimitiveEdge extends Layoutable {
-        source: ID;
-        sourcePort?: ID;
-        sourcePoint?: Point;
-
-        target: ID;
-        targetPort?: ID;
-        targetPoint?: Point;
-        
-        bendPoints?: Point[];
-        labels?: Label[];
-    }
-
-    interface ExtendedEdge extends Layoutable {
+    
+    export interface ExtendedEdge extends Layoutable {
         sources: ID[];
         targets: ID[];
         sections?: EdgeSection[];
         labels?: Label[];
     }
 
-    export type Edge = PrimitiveEdge | ExtendedEdge;
+    export type Edge = ExtendedEdge;
 
     interface EdgeSection extends Layoutable {
         startPoint: Point;

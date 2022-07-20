@@ -30,6 +30,10 @@
 		"downlevelIteration": true,
 		"declaration": true,
 
+		"resolveJsonModule": true,
+		"esModuleInterop": true,
+		"sourceMap": true,
+
 		"pretty": true
 	},
 	"include": [

@@ -1,2 +1,4 @@
 import { CompiledSchematic } from "./compiler";
-export declare function render(schematic: CompiledSchematic): Promise<string>;
+import { Skin } from "./skin";
+import { SymbolLibrary } from "./symbols";
+export declare function render(schematic: CompiledSchematic, symbols: SymbolLibrary, skin: Skin): Promise<string>;

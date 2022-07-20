@@ -1,18 +1,20 @@
 import {parse} from "./parser";
 import {compile} from "./compiler";
+import { CoreSymbols } from "./symbols";
 
 describe("compiler", () => {
+    const symbols = new CoreSymbols();
 
     it("compiles empty schematic", () => {
         const parsed = parse("");
-        const compiled = compile(parsed);
+        const compiled = compile(parsed, symbols);
         expect(compiled.edges).toHaveLength(0);
         expect(compiled.nodes).toHaveLength(0);
     });
 
     it("handles automatic assignment", () => {
         const parsed = parse("[22k]");
-        const compiled = compile(parsed);
+        const compiled = compile(parsed, symbols);
         expect(compiled.edges).toHaveLength(0);
         expect(compiled.nodes).toHaveLength(1);
         const [node] = compiled.nodes;
@@ -21,7 +23,7 @@ describe("compiler", () => {
 
     it("handles duplicate definition", () => {
         const parsed = parse("[R1:22k] - [R1 \"resistor\"]");
-        const compiled = compile(parsed);
+        const compiled = compile(parsed, symbols);
         expect(compiled.edges).toHaveLength(1);
         expect(compiled.nodes).toHaveLength(1);
         const [node] = compiled.nodes;
@@ -31,7 +33,7 @@ describe("compiler", () => {
 
     it("handles chained connections", () => {
         const parsed = parse("[R1] - [R2] - [R3]");
-        const compiled = compile(parsed);
+        const compiled = compile(parsed, symbols);
         expect(compiled.edges).toHaveLength(2);
         expect(compiled.nodes).toHaveLength(3);
         const [e1, e2] = compiled.edges;

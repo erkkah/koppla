@@ -64,7 +64,6 @@ function inArray(wanted: unknown, valid: string[]): boolean {
 }
 
 function validComponentDelimiters(start: string, end: string): boolean {
-    console.log(`start: ${start}, end: ${end}`);
     switch (start) {
         case "[":
             return inArray(end, ["]", "|"]);
@@ -243,7 +242,7 @@ export function createParser(): Parser {
     Unit = Alpha
 `;
     try {
-        const parser = generate(grammar, { trace: true });
+        const parser = generate(grammar, { trace: false });
         return parser;
     } catch (err) {
         if ("format" in (err as Record<string, unknown>)) {

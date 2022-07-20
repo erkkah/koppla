@@ -1,0 +1,30 @@
+{
+    "R": {
+        "ID": "resistor",
+        "terminals": ["a", "b"]
+    },
+    "C": {
+        "ID": "capacitor",
+        "terminals": ["a", "b"]
+    },
+    "CPOL": {
+        "ID": "capacitor_pol",
+        "terminals": ["+", "-"]
+    },
+    "D": {
+        "ID": "diode",
+        "terminals": ["a", "b"]
+    },
+    "Q": {
+        "ID": "bjt",
+        "terminals": ["c", "b", "e"]
+    },
+    "BJT": {
+        "ID": "bjt",
+        "terminals": ["c", "b", "e"]
+    },
+    "in": {
+        "ID": "input",
+        "terminals": ["in"]
+    }
+}

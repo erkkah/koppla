@@ -1,4 +1,5 @@
 import { Schematic, Definition, Port, Value } from "./parser";
+import { SymbolLibrary } from "./symbols";
 interface NodeID {
     ID: string;
     resolved: boolean;
@@ -21,12 +22,14 @@ export declare class CompiledSchematic {
     private components;
     private connections;
     private unresolvedIndex;
+    private resolved;
+    private getNodes;
     get nodes(): CompiledNode[];
-    get edges(): CompiledConnection[];
+    get edges(): Required<CompiledConnection>[];
     component(definition: CompiledDefinition): NodeID;
     port(port: Port): NodeID;
     connection(source: NodeID, target: NodeID, sourceTerminal?: string, targetTerminal?: string): void;
-    resolve(): void;
+    resolve(symbols: SymbolLibrary): void;
 }
-export declare function compile(schematic: Schematic): CompiledSchematic;
+export declare function compile(schematic: Schematic, symbols: SymbolLibrary): CompiledSchematic;
 export {};
