@@ -26,10 +26,10 @@ declare module 'elkjs' {
         edges?: Edge[];
     }
 
-    export interface Port extends Layoutable {
+    export interface Port extends Locatable {
     }
 
-    export interface Label extends Layoutable {
+    export interface Label extends Locatable {
         text: string;
     }
 

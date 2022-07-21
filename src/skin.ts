@@ -4,7 +4,7 @@ import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { encodeSVGPath, SVGPathData } from "svg-pathdata";
 
 interface XMLNode extends Record<string, unknown> {
-    "@attrs": Record<string, string | number | undefined>;
+    "@attrs": Record<string, string | undefined>;
 }
 
 interface SVGElement extends XMLNode {
@@ -22,18 +22,18 @@ interface SVGPath extends SVGElement {
 
 interface SVGCircle extends XMLNode {
     "@attrs": SVGElement["@attrs"] & {
-        d: number;
-        cx: number;
-        cy: number;
+        d: string;
+        cx: string;
+        cy: string;
     };
 }
 
 interface SVGRect extends XMLNode {
     "@attrs": SVGElement["@attrs"] & {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
+        x: string;
+        y: string;
+        width: string;
+        height: string;
     };
 }
 
@@ -54,7 +54,11 @@ interface Point {
 }
 
 export class SymbolSkin {
-    constructor(readonly svg: SVGNode, readonly size: Point) {}
+    constructor(
+        readonly svg: SVGNode,
+        readonly size: Point,
+        readonly terminals: Record<string, Point>
+    ) {}
 
     get svgData(): string {
         const builder = new XMLBuilder({
@@ -63,7 +67,7 @@ export class SymbolSkin {
             attributesGroupName: "@attrs",
             attributeValueProcessor: (name, value) => {
                 if (["x", "y", "cx", "cy", "width", "height"].includes(name)) {
-                    return String(Math.round(Number(value) * 1000) / 1000)
+                    return String(Math.round(Number(value) * 1000) / 1000);
                 }
                 return value;
             },
@@ -119,8 +123,61 @@ export class Skin {
 function makeSymbolSkin(svg: SVGNode): SymbolSkin {
     const translated = translateAndStripSVG(svg);
     const bounds = getSVGBounds(translated);
+    const terminals = extractTerminals(translated, bounds.max);
 
-    return new SymbolSkin(translated, bounds.max);
+    return new SymbolSkin(translated, bounds.max, terminals);
+}
+
+function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
+    const terminalPaths = findTerminalPaths(svg);
+    const terminalPoints = terminalPaths.map((path) => {
+        const pathData = new SVGPathData(path["@attrs"].d);
+        const terminal = path["@attrs"]["koppla:terminal"];
+        assert(typeof terminal === "string");
+        delete path["@attrs"]["koppla:terminal"];
+
+        const bounds = pathData.getBounds();
+        if (bounds.minX === bounds.maxX) {
+            // vertical connector
+
+            if (bounds.minY < size.y / 2) {
+                // top connector
+
+                return {
+                    [terminal]: { x: bounds.minX, y: bounds.minY },
+                };
+            } else {
+                // bottom connector
+
+                return {
+                    [terminal]: { x: bounds.minX, y: bounds.maxY },
+                };
+            }
+        } else {
+            assert(bounds.minY === bounds.maxY);
+            // horizontal connector
+
+            if (bounds.minX < size.x / 2) {
+                // left connector
+
+                return {
+                    [terminal]: { x: bounds.minX, y: bounds.minY },
+                };
+            } else {
+                // right connector
+
+                return {
+                    [terminal]: { x: bounds.maxX, y: bounds.minY },
+                };
+            }
+        }
+    });
+    return terminalPoints.reduce((map, point) => {
+        return {
+            ...map,
+            ...point,
+        };
+    }, {});
 }
 
 function translateAndStripSVG(svg: SVGNode): SVGNode {
@@ -134,13 +191,13 @@ function translateAndStripSVG(svg: SVGNode): SVGNode {
         for (const path of svg.path ?? []) {
             const data = path["@attrs"].d;
             const pathData = new SVGPathData(data);
-            const zeroBased = pathData.translate(
-                -bounds.min.x,
-                -bounds.min.y
-            ).round(1e3).commands;
+            const zeroBased = pathData
+                .translate(-bounds.min.x, -bounds.min.y)
+                .round(1e3).commands;
             const attrs = path["@attrs"];
             path["@attrs"] = {
                 style: attrs.style,
+                "koppla:terminal": attrs["koppla:terminal"],
                 d: encodeSVGPath(zeroBased),
             };
         }
@@ -149,11 +206,13 @@ function translateAndStripSVG(svg: SVGNode): SVGNode {
     if (svg.circle !== undefined) {
         for (const c of svg.circle) {
             const attrs = c["@attrs"];
+            const cx = String(Number(attrs.cx) - bounds.min.x);
+            const cy = String(Number(attrs.cy) - bounds.min.y);
             c["@attrs"] = {
                 style: attrs.style,
                 d: attrs.d,
-                cx: attrs.cx - bounds.min.x,
-                cy: attrs.cy - bounds.min.y,
+                cx,
+                cy,
             };
         }
     }
@@ -161,10 +220,13 @@ function translateAndStripSVG(svg: SVGNode): SVGNode {
     if (svg.rect !== undefined) {
         for (const r of svg.rect) {
             const attrs = r["@attrs"];
+            const x = String(Number(attrs.x) - bounds.min.x);
+            const y = String(Number(attrs.y) - bounds.min.y);
+
             r["@attrs"] = {
                 style: attrs.style,
-                x: attrs.x - bounds.min.x,
-                y: attrs.y - bounds.min.y,
+                x,
+                y,
                 width: attrs.width,
                 height: attrs.height,
             };
@@ -201,7 +263,7 @@ function maxPoint(a: Point, b: Point): Point {
 
 function getSVGBounds(svg: SVGNode): { min: Point; max: Point } {
     let min: Point = { x: Number.MAX_VALUE, y: Number.MAX_VALUE };
-    let max: Point = { x: Number.MIN_VALUE, y: Number.MIN_VALUE };
+    let max: Point = { x: -Number.MAX_VALUE, y: -Number.MAX_VALUE };
 
     if (svg.path !== undefined) {
         for (const path of svg.path ?? []) {
@@ -216,13 +278,27 @@ function getSVGBounds(svg: SVGNode): { min: Point; max: Point } {
     if (svg.circle !== undefined) {
         for (const c of svg.circle) {
             const attrs = c["@attrs"];
-            const r = attrs.d / 2;
-            const cMinX = attrs.cx - r;
-            const cMinY = attrs.cy - r;
-            const cMaxX = attrs.cx + r;
-            const cMaxY = attrs.cy + r;
+            const r = Number(attrs.d) / 2;
+            const cx = Number(attrs.cx);
+            const cy = Number(attrs.cy);
+            const cMinX = cx - r;
+            const cMinY = cy - r;
+            const cMaxX = cx + r;
+            const cMaxY = cy + r;
             min = minPoint(min, { x: cMinX, y: cMinY });
             max = maxPoint(max, { x: cMaxX, y: cMaxY });
+        }
+    }
+
+    if (svg.rect !== undefined) {
+        for (const r of svg.rect) {
+            const attrs = r["@attrs"];
+            const x = Number(attrs.x);
+            const y = Number(attrs.y);
+            const width = Number(attrs.width);
+            const height = Number(attrs.height);
+            min = minPoint(min, {x, y});
+            max = maxPoint(max, {x: x + width, y: y + height});
         }
     }
 
@@ -246,11 +322,8 @@ function findNodeWithAttribute(
         return start;
     }
 
-    const scanChildren = (children?: SVGNode | SVGNode[]) => {
+    const scanChildren = (children?: SVGNode[]) => {
         if (children !== undefined) {
-            if (!Array.isArray(children)) {
-                children = [children];
-            }
             for (const child of children) {
                 const found = findNodeWithAttribute(child, attribute, value);
                 if (found) {
@@ -262,4 +335,16 @@ function findNodeWithAttribute(
     };
 
     return scanChildren(start.g) || scanChildren(start.path);
+}
+
+function findTerminalPaths(start: SVGNode): SVGPath[] {
+    const paths = (start.path ?? []).filter(
+        (path) => "koppla:terminal" in path["@attrs"]
+    );
+
+    const childPaths = (start.g ?? []).flatMap<SVGPath>((node) => {
+        return findTerminalPaths(node);
+    });
+
+    return [...paths, ...childPaths];
 }

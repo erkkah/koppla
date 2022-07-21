@@ -3,6 +3,7 @@ import ELK, {
     Label,
     Node as ELKNode,
     Edge as ELKEdge,
+    Port as ELKPort,
 } from "elkjs";
 
 import { CompiledSchematic, CompiledNode } from "./compiler";
@@ -24,29 +25,66 @@ export async function render(
 ): Promise<string> {
     const elk = new ELK();
 
-    const nodes: KopplaELKNode[] = schematic.nodes.map((node) => ({
-        id: node.ID,
-        labels: labelsFromNode(node),
-        width: 10,
-        height: 10,
-        koppla: { node },
-    }));
+    const nodes: KopplaELKNode[] = schematic.nodes.map((node) => {
+        const symbolInfo = symbols.lookup(node.symbol);
+        const symbolSkin = skin.findSymbol(symbolInfo.ID);
+        if (symbolSkin === undefined) {
+            throw new Error(`Symbol ${symbolInfo.ID} not found in skin`);
+        }
+        const terminals = symbolSkin.terminals;
+
+        const ports: ELKPort[] = symbolInfo.terminals.map<ELKPort>(
+            (terminal) => {
+                const portPoint = terminals[terminal];
+                if (portPoint === undefined) {
+                    throw new Error(
+                        `Symbol ${symbolInfo.ID} terminal ${terminal} not found in skin`
+                    );
+                }
+                return {
+                    id: `${node.ID}:P${terminal}`,
+                    x: portPoint.x,
+                    y: portPoint.y,
+                    width: 0,
+                    height: 0,
+                };
+            }
+        );
+
+        return {
+            id: node.ID,
+            labels: labelsFromNode(node),
+            width: symbolSkin.size.x,
+            height: symbolSkin.size.y,
+            koppla: { node },
+            ports,
+        };
+    });
 
     const edges: ELKEdge[] = schematic.edges.map((edge, index) => ({
         id: `E${index}`,
-        sources: [edge.source.ID],
-        targets: [edge.target.ID],
+        sources: [`${edge.source.ID}:P${edge.sourceTerminal}`],
+        targets: [`${edge.target.ID}:P${edge.targetTerminal}`],
     }));
 
     const root: KopplaELKRoot = {
         id: "root",
         children: nodes,
-        edges: edges,
+        edges,
     };
 
     setupFromSkin(root, symbols, skin);
 
-    const laidOut = await elk.layout(root);
+    const laidOut = await elk.layout(root, {
+        // https://www.eclipse.org/elk/reference/algorithms/org-eclipse-elk-layered.html
+        layoutOptions: {
+            "org.eclipse.elk.algorithm": "layered",
+            "org.eclipse.elk.direction": "DOWN",
+            "org.eclipse.elk.portConstraints": "FIXED_POS",
+            "org.eclipse.elk.edgeRouting": "ORTHOGONAL",
+            "org.eclipse.elk.nodeLabels.placement":"OUTSIDE H_CENTER V_TOP",
+        },
+    });
 
     return renderSVG(laidOut as KopplaELKRoot);
 }
@@ -84,28 +122,39 @@ function renderSVG(layout: KopplaELKRoot): string {
         return commands;
     }, [] as string[]);
 
-    const svgWires = layout.edges.reduce(
-        (commands, edge) => {
-            const lines = (edge.sections ?? []).reduce((lines, section) => {
-                lines.push(
-                    `M${section.startPoint.x} ${section.startPoint.y} L${section.endPoint.x} ${section.endPoint.y}`
-                );
-                return lines;
-            }, [] as string[]);
+    const svgWires = layout.edges.reduce((commands, edge) => {
+        const lines = (edge.sections ?? []).reduce((lines, section) => {
+            const points = (section.bendPoints ?? []).concat(section.endPoint);
+            const lineTos = points.map((point) => `L${point.x} ${point.y}`);
+            lines.push(
+                `M${section.startPoint.x} ${section.startPoint.y} ${lineTos.join("")}`
+            );
+            return lines;
+        }, [] as string[]);
 
-            const style =
-                "fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1";
-            const wire = `<path d="${lines.join(" ")}" style="${style}"/>`;
-            commands.push(wire);
-            return commands;
-        },
-        [] as string[]
-    );
+        const style =
+            "fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1";
+        const wire = `<path d="${lines.join(" ")}" style="${style}"/>`;
+        commands.push(wire);
+        return commands;
+    }, [] as string[]);
+
+
+    const svgLabels = layout.children.flatMap((node) => {
+        const labels = node.labels ?? [];
+        return labels.map((label) => {
+            const x = round(Number(node.x) + Number(label.x));
+            const y = round(Number(node.y) + Number(label.y));
+            return `<text x="${x}" y="${y}" style="fill:#000000;fill-opacity:1;stroke:none">${label.text}</text>`
+        }
+        );
+    });
 
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
         ${svgSymbols.join("")}
         ${svgWires.join("")}
+        ${svgLabels.join("")}
         </svg>`;
 }
 
@@ -115,6 +164,9 @@ function makeLabel(text: string): Label {
     return {
         id: `LBL${labelIndex++}`,
         text,
+        // ??? Hack!
+        width: 10 * text.length,
+        height: 10,
     };
 }
 

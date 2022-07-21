@@ -1,5 +1,5 @@
 interface XMLNode extends Record<string, unknown> {
-    "@attrs": Record<string, string | number | undefined>;
+    "@attrs": Record<string, string | undefined>;
 }
 interface SVGElement extends XMLNode {
     "@attrs": XMLNode["@attrs"] & {
@@ -14,17 +14,17 @@ interface SVGPath extends SVGElement {
 }
 interface SVGCircle extends XMLNode {
     "@attrs": SVGElement["@attrs"] & {
-        d: number;
-        cx: number;
-        cy: number;
+        d: string;
+        cx: string;
+        cy: string;
     };
 }
 interface SVGRect extends XMLNode {
     "@attrs": SVGElement["@attrs"] & {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
+        x: string;
+        y: string;
+        width: string;
+        height: string;
     };
 }
 interface SVGNode extends XMLNode {
@@ -43,7 +43,8 @@ interface Point {
 export declare class SymbolSkin {
     readonly svg: SVGNode;
     readonly size: Point;
-    constructor(svg: SVGNode, size: Point);
+    readonly terminals: Record<string, Point>;
+    constructor(svg: SVGNode, size: Point, terminals: Record<string, Point>);
     get svgData(): string;
 }
 export declare class Skin {
