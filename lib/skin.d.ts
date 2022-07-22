@@ -36,7 +36,7 @@ interface SVGNode extends XMLNode {
 interface ParsedSVG {
     svg: SVGNode;
 }
-interface Point {
+export interface Point {
     x: number;
     y: number;
 }

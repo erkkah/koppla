@@ -12,7 +12,7 @@ const skinFile = join(__dirname, "..", "Electrical_symbols_library.svg");
 async function main() {
     const symbols = new CoreSymbols();
     const source = `
-    [R1] - [22k]`;
+    [R1] - [22k] [R1] - |4.7u|`;
     const parsed = parse(source);
     const compiled = compile(parsed, symbols);
     const skin = new Skin();

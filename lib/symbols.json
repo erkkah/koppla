@@ -16,15 +16,39 @@
         "terminals": ["a", "b"]
     },
     "Q": {
-        "ID": "bjt",
+        "ID": "bjt_npn",
         "terminals": ["c", "b", "e"]
     },
-    "BJT": {
-        "ID": "bjt",
+    "NPN": {
+        "ID": "bjt_npn",
         "terminals": ["c", "b", "e"]
     },
-    "in": {
+    "PNP": {
+        "ID": "bjt_pnp",
+        "terminals": ["c", "b", "e"]
+    },
+    "MOSFET": {
+        "ID": "mosfet_n_e",
+        "terminals": ["c", "b", "e"]
+    },
+    "NMOSFET": {
+        "ID": "mosfet_n_e",
+        "terminals": ["c", "b", "e"]
+    },
+    "PMOSFET": {
+        "ID": "mosfet_p_e",
+        "terminals": ["c", "b", "e"]
+    },
+    "IN": {
         "ID": "input",
         "terminals": ["in"]
+    },
+    "OUT": {
+        "ID": "output",
+        "terminals": ["in"]
+    },
+    "V": {
+        "ID": "voltage",
+        "terminals": ["+", "-"]
     }
 }

@@ -48,7 +48,7 @@ interface ParsedSVG {
     svg: SVGNode;
 }
 
-interface Point {
+export interface Point {
     x: number;
     y: number;
 }
@@ -121,7 +121,8 @@ export class Skin {
 }
 
 function makeSymbolSkin(svg: SVGNode): SymbolSkin {
-    const translated = translateAndStripSVG(svg);
+    const initialBounds = getSVGBounds(svg);
+    const translated = translateAndStripSVG(svg, initialBounds);
     const bounds = getSVGBounds(translated);
     const terminals = extractTerminals(translated, bounds.max);
 
@@ -132,9 +133,11 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
     const terminalPaths = findTerminalPaths(svg);
     const terminalPoints = terminalPaths.map((path) => {
         const pathData = new SVGPathData(path["@attrs"].d);
-        const terminal = path["@attrs"]["koppla:terminal"];
+        const terminal = pluckAttribute(path, "koppla:terminal");
+        if (terminal === undefined) {
+            return {};
+        }
         assert(typeof terminal === "string");
-        delete path["@attrs"]["koppla:terminal"];
 
         const bounds = pathData.getBounds();
         if (bounds.minX === bounds.maxX) {
@@ -180,19 +183,28 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
     }, {});
 }
 
-function translateAndStripSVG(svg: SVGNode): SVGNode {
-    const bounds = getSVGBounds(svg);
-
+/**
+ * Returns a translated node with its content centered in a square bounding box.
+ * Strips unneeded attributes in the process.
+ */
+function translateAndStripSVG(svg: SVGNode, bounds: Bounds): SVGNode {
     svg["@attrs"] = {
         style: svg["@attrs"].style,
     };
+
+    const width = bounds.max.x - bounds.min.x;
+    const height = bounds.max.y - bounds.min.y;
+    const landscape = width > height;
+
+    const xAdjust = landscape ? -bounds.min.x : -bounds.min.x + (height - width) / 2;
+    const yAdjust = landscape ? -bounds.min.y + (width - height) / 2 : -bounds.min.y;
 
     if (svg.path !== undefined) {
         for (const path of svg.path ?? []) {
             const data = path["@attrs"].d;
             const pathData = new SVGPathData(data);
             const zeroBased = pathData
-                .translate(-bounds.min.x, -bounds.min.y)
+                .translate(xAdjust, yAdjust)
                 .round(1e3).commands;
             const attrs = path["@attrs"];
             path["@attrs"] = {
@@ -206,8 +218,8 @@ function translateAndStripSVG(svg: SVGNode): SVGNode {
     if (svg.circle !== undefined) {
         for (const c of svg.circle) {
             const attrs = c["@attrs"];
-            const cx = String(Number(attrs.cx) - bounds.min.x);
-            const cy = String(Number(attrs.cy) - bounds.min.y);
+            const cx = String(Number(attrs.cx) + xAdjust);
+            const cy = String(Number(attrs.cy) + yAdjust);
             c["@attrs"] = {
                 style: attrs.style,
                 d: attrs.d,
@@ -220,8 +232,8 @@ function translateAndStripSVG(svg: SVGNode): SVGNode {
     if (svg.rect !== undefined) {
         for (const r of svg.rect) {
             const attrs = r["@attrs"];
-            const x = String(Number(attrs.x) - bounds.min.x);
-            const y = String(Number(attrs.y) - bounds.min.y);
+            const x = String(Number(attrs.x) + xAdjust);
+            const y = String(Number(attrs.y) + yAdjust);
 
             r["@attrs"] = {
                 style: attrs.style,
@@ -239,7 +251,7 @@ function translateAndStripSVG(svg: SVGNode): SVGNode {
             if (child["@attrs"].transform !== undefined) {
                 throw new Error("Group level transform is not supported");
             }
-            const translated = translateAndStripSVG(child);
+            const translated = translateAndStripSVG(child, bounds);
             svg.g[i] = translated;
         }
     }
@@ -261,7 +273,12 @@ function maxPoint(a: Point, b: Point): Point {
     };
 }
 
-function getSVGBounds(svg: SVGNode): { min: Point; max: Point } {
+interface Bounds {
+    min: Point;
+    max: Point;
+}
+
+function getSVGBounds(svg: SVGNode): Bounds {
     let min: Point = { x: Number.MAX_VALUE, y: Number.MAX_VALUE };
     let max: Point = { x: -Number.MAX_VALUE, y: -Number.MAX_VALUE };
 
@@ -297,8 +314,8 @@ function getSVGBounds(svg: SVGNode): { min: Point; max: Point } {
             const y = Number(attrs.y);
             const width = Number(attrs.width);
             const height = Number(attrs.height);
-            min = minPoint(min, {x, y});
-            max = maxPoint(max, {x: x + width, y: y + height});
+            min = minPoint(min, { x, y });
+            max = maxPoint(max, { x: x + width, y: y + height });
         }
     }
 
@@ -311,6 +328,12 @@ function getSVGBounds(svg: SVGNode): { min: Point; max: Point } {
     }
 
     return { min, max };
+}
+
+function pluckAttribute(svg: XMLNode, attribute: string): string | undefined {
+    const value = svg["@attrs"][attribute];
+    delete svg["@attrs"][attribute];
+    return value;
 }
 
 function findNodeWithAttribute(

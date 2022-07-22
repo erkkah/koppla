@@ -5,7 +5,7 @@ declare module 'elkjs' {
 
     type Worker = never;
 
-    type LayoutOptions = Record<string, unknown>;
+    export type LayoutOptions = Record<string, unknown>;
 
     interface Layoutable {
         id: ID;
