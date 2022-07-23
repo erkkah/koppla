@@ -7,6 +7,8 @@ import ELK, {
     LayoutOptions,
 } from "elkjs";
 
+const DEBUG = false;
+
 import { CompiledSchematic, CompiledNode } from "./compiler";
 import { NumericValue, Value } from "./parser";
 import { Skin, SymbolSkin, Point } from "./skin";
@@ -52,11 +54,14 @@ export async function render(
             }
         );
 
+        const width = symbolSkin.size.x;
+        const height = symbolSkin.size.y;
+
         return {
             id: node.ID,
             labels: labelsFromNode(node),
-            width: symbolSkin.size.x,
-            height: symbolSkin.size.y,
+            width,
+            height,
             koppla: { node, rotation: 0 },
             ports,
         };
@@ -79,14 +84,21 @@ export async function render(
         "org.eclipse.elk.algorithm": "layered",
         "org.eclipse.elk.direction": "DOWN",
         "org.eclipse.elk.edgeRouting": "ORTHOGONAL",
-        "org.eclipse.elk.nodeLabels.placement": "OUTSIDE H_LEFT V_TOP",
+        "org.eclipse.elk.spacing.labelLabel": 3,
     };
 
-    const prePass = (await elk.layout(cloneWithSkin(graph, symbols, skin, {squareBoundingBox: true}), {
-        layoutOptions,
-    })) as KopplaELKRoot;
+    const prePass = (await elk.layout(
+        cloneWithSkin(graph, symbols, skin, { squareBoundingBox: true }),
+        {
+            layoutOptions,
+        }
+    )) as KopplaELKRoot;
 
-    const optimized = optimize(cloneWithSkin(graph, symbols, skin, {squareBoundingBox: true}), prePass);
+    const optimized = optimize(
+        cloneWithSkin(graph, symbols, skin, { squareBoundingBox: true }),
+        prePass
+    );
+    setupLabelPlacements(optimized);
 
     const laidOut = await elk.layout(optimized, {
         layoutOptions: {
@@ -96,6 +108,54 @@ export async function render(
     });
 
     return renderSVG(laidOut as KopplaELKRoot);
+}
+
+function setupLabelPlacements(graph: KopplaELKRoot) {
+    type Edge = "N" | "S" | "E" | "W";
+    const portEdges: Edge[] = [];
+
+    for (const child of graph.children) {
+        assert(child.width !== undefined);
+        assert(child.height !== undefined);
+
+        for (const port of child.ports ?? []) {
+            assert(port.x !== undefined);
+            assert(port.y !== undefined);
+
+            if (port.x === 0) {
+                portEdges.push("W");
+                continue;
+            }
+            if (port.x === child.width) {
+                portEdges.push("E");
+                continue;
+            }
+            if (port.y === 0) {
+                portEdges.push("N");
+                continue;
+            }
+            if (port.y === child.height) {
+                portEdges.push("S");
+                continue;
+            }
+        }
+
+        let placement = "OUTSIDE";
+
+        if (!portEdges.includes("N")) {
+            placement = "OUTSIDE H_CENTER V_TOP";
+        } else if (!portEdges.includes("S")) {
+            placement = "OUTSIDE H_CENTER V_BOTTOM";
+        } else if (!portEdges.includes("E")) {
+            placement = "OUTSIDE H_RIGHT V_CENTER";
+        } else if (!portEdges.includes("W")) {
+            placement = "OUTSIDE H_LEFT V_CENTER";
+        }
+        child.layoutOptions = {
+            ...child.layoutOptions,
+            "org.eclipse.elk.nodeLabels.placement": placement,
+        };
+    }
 }
 
 function deepCopy<T>(object: T): T {
@@ -210,7 +270,7 @@ function rotate(p: Point, reference: Point, rotation: number): Point {
 function distance(a: Point, b: Point): number {
     const xDiff = a.x - b.x;
     const yDiff = a.y - b.y;
-    return Math.sqrt((xDiff * xDiff) + (yDiff * yDiff));
+    return Math.sqrt(xDiff * xDiff + yDiff * yDiff);
 }
 
 function cloneWithSkin(
@@ -259,6 +319,11 @@ function renderSVG(layout: KopplaELKRoot): string {
             ${symbol?.svgData}
         </g>`;
         commands.push(figure);
+        if (DEBUG) {
+            commands.push(
+                `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" style="fill:none;stroke:#000000;stroke-width:1;"/>`
+            );
+        }
         return commands;
     }, [] as string[]);
 
@@ -286,7 +351,12 @@ function renderSVG(layout: KopplaELKRoot): string {
         return labels.map((label) => {
             const x = round(Number(node.x) + Number(label.x));
             const y = round(Number(node.y) + Number(label.y));
-            return `<text x="${x}" y="${y}" alignment-baseline="hanging" style="fill:#000000;fill-opacity:1;stroke:none">${label.text}</text>`;
+            return (
+                `<text x="${x}" y="${y}" alignment-baseline="hanging" style="fill:#000000;fill-opacity:1;stroke:none">${label.text}</text>` +
+                (DEBUG
+                    ? `<rect x="${x}" y="${y}" width="${label.width}" height="${label.height}" style="fill:none;stroke:#000000;stroke-width:1;"/>`
+                    : "")
+            );
         });
     });
 
