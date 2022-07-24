@@ -184,20 +184,33 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
 }
 
 /**
- * Returns a translated node with its content centered in a square bounding box.
+ * Returns an origin - translated node, optionally with its content centered in a square bounding box.
  * Strips unneeded attributes in the process.
  */
-function translateAndStripSVG(svg: SVGNode, bounds: Bounds): SVGNode {
+function translateAndStripSVG(
+    svg: SVGNode,
+    bounds: Bounds,
+    options: { makeSquare: boolean } = { makeSquare: false }
+): SVGNode {
     svg["@attrs"] = {
         style: svg["@attrs"].style,
     };
 
-    const width = bounds.max.x - bounds.min.x;
-    const height = bounds.max.y - bounds.min.y;
-    const landscape = width > height;
+    let xAdjust = -bounds.min.x;
+    let yAdjust = -bounds.min.y;
 
-    const xAdjust = landscape ? -bounds.min.x : -bounds.min.x + (height - width) / 2;
-    const yAdjust = landscape ? -bounds.min.y + (width - height) / 2 : -bounds.min.y;
+    if (options.makeSquare) {
+        const width = bounds.max.x - bounds.min.x;
+        const height = bounds.max.y - bounds.min.y;
+        const landscape = width > height;
+
+        xAdjust = landscape
+            ? -bounds.min.x
+            : -bounds.min.x + (height - width) / 2;
+        yAdjust = landscape
+            ? -bounds.min.y + (width - height) / 2
+            : -bounds.min.y;
+    }
 
     if (svg.path !== undefined) {
         for (const path of svg.path ?? []) {

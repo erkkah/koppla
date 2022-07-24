@@ -7,7 +7,7 @@ import ELK, {
     LayoutOptions,
 } from "elkjs";
 
-const DEBUG = false;
+const DEBUG = true;
 
 import { CompiledSchematic, CompiledNode } from "./compiler";
 import { NumericValue, Value } from "./parser";
@@ -24,7 +24,8 @@ type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> &
 export async function render(
     schematic: CompiledSchematic,
     symbols: SymbolLibrary,
-    skin: Skin
+    skin: Skin,
+    options: { optimize: boolean } = { optimize: true }
 ): Promise<string> {
     const elk = new ELK();
 
@@ -94,10 +95,15 @@ export async function render(
         }
     )) as KopplaELKRoot;
 
-    const optimized = optimize(
-        cloneWithSkin(graph, symbols, skin, { squareBoundingBox: true }),
-        prePass
-    );
+    if (!options.optimize) {
+        return renderSVG(prePass);
+    }
+
+    const graphWithSkin = cloneWithSkin(graph, symbols, skin, {
+        squareBoundingBox: false,
+    });
+
+    const optimized = optimize(graphWithSkin, prePass);
     setupLabelPlacements(optimized);
 
     const laidOut = await elk.layout(optimized, {
@@ -176,6 +182,14 @@ export function optimize(
     return root;
 }
 
+/**
+ * Rotates a node to move ports to an optimal position.
+ * 
+ * @param fixed Unprocessed node
+ * @param processed Preprocessed node, laid out with no port restrictions
+ * @returns Shallow copy of the fixed node in a rotation which minimizes the
+ *  total port distance to the preprocessed node.
+ */
 function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
     if (fixed.ports === undefined) {
         assert(processed.ports === undefined);
@@ -183,9 +197,9 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
     }
     assert(fixed.ports.length === processed.ports?.length);
 
-    const rotations = [0, Math.PI / 2, Math.PI, (3 * Math.PI) / 2];
+    const rotations = [0, 1, 2, 3];
     const rotatedNodes = rotations.map((rotation) =>
-        rotatedNode(fixed, rotation)
+        rotatedNode(fixed, rotation, { makeSquare: true })
     );
 
     const distances = rotatedNodes.map((node) =>
@@ -202,19 +216,60 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
         }
     }
 
-    const bestNode = rotatedNodes[minIndex];
-    bestNode.koppla.rotation = rotations[minIndex];
+    const bestNode = rotatedNode(fixed, minIndex, {
+        makeSquare: false,
+    });
+    bestNode.koppla.rotation = rotations[minIndex] * Math.PI / 2;
     if (minIndex === 1 || minIndex === 3) {
         [bestNode.width, bestNode.height] = [bestNode.height, bestNode.width];
     }
     return bestNode;
 }
 
-function rotatedNode<T extends ELKNode>(node: T, rotation: number): T {
+/**
+ * Rotates ports and dimensions (width, height) in PI/2 steps counter
+ * clockwise.
+ *
+ * Now, this is tricky. We want to rotate the node around it's center.
+ * The node's origin is always top left and the port positions are relative
+ * to the node origin.
+ *
+ * Optionally, the returned dimensions are always square, and the ports are
+ * moved to keep their relative position.
+ *
+ * @param steps integer number of PI/2 rotations to perform, [0,3].
+ * @returns a shallow copy of the given node, with rotated ports and dimensions
+ */
+function rotatedNode<T extends ELKNode>(
+    node: T,
+    steps: number,
+    options: { makeSquare: boolean } = { makeSquare: false }
+): T {
+    assert(node.x === undefined);
+    assert(node.y === undefined);
     assert(node.width !== undefined);
     assert(node.height !== undefined);
+    assert(Number.isInteger(steps));
+    assert(steps >= 0 && steps <= 3);
 
-    const reference: Point = {
+    const rotation = (steps * Math.PI) / 2;
+
+    const maxDim = Math.max(node.width, node.height);
+    const width = options.makeSquare ? maxDim : node.width;
+    const height = options.makeSquare ? maxDim : node.height;
+
+    const xAdjust = options.makeSquare ? (width - node.width) / 2 : 0;
+    const yAdjust = options.makeSquare ? (height - node.height) / 2 : 0;
+
+    const originMoves = (steps % 2 !== 0) && !options.makeSquare;
+    const rotatedNodeOrigin = originMoves
+        ? {
+              x: (node.width - node.height) / 2,
+              y: (node.height - node.width) / 2,
+          }
+        : { x: 0, y: 0 };
+
+    const rotationReference: Point = {
         x: node.width / 2,
         y: node.height / 2,
     };
@@ -225,9 +280,11 @@ function rotatedNode<T extends ELKNode>(node: T, rotation: number): T {
 
         const rotatedPoint = rotate(
             { x: port.x, y: port.y },
-            reference,
+            rotationReference,
             rotation
         );
+        rotatedPoint.x += xAdjust - rotatedNodeOrigin.x;
+        rotatedPoint.y += yAdjust - rotatedNodeOrigin.y;
         return {
             ...port,
             ...rotatedPoint,
@@ -236,12 +293,14 @@ function rotatedNode<T extends ELKNode>(node: T, rotation: number): T {
 
     return {
         ...node,
+        width,
+        height,
         ports: rotatedPorts,
     };
 }
 
 function totalPortDistance(fixed: ELKNode, processed: ELKNode): number {
-    return (fixed.ports as Required<ELKPort>[]).reduce(
+    const total = (fixed.ports as Required<ELKPort>[]).reduce(
         (sum, fixedPort, index) => {
             assert(processed.ports !== undefined);
             const processedPort = processed.ports[index] as Required<ELKPort>;
@@ -249,9 +308,14 @@ function totalPortDistance(fixed: ELKNode, processed: ELKNode): number {
         },
         0
     );
+    assert(Number.isFinite(total));
+    return total;
 }
 
 function rotate(p: Point, reference: Point, rotation: number): Point {
+    assert(rotation >= 0);
+    assert(rotation <= Math.PI * 2);
+
     if (rotation === 0) {
         return p;
     }
@@ -308,13 +372,30 @@ function round(value: number | string | undefined): string {
 
 function renderSVG(layout: KopplaELKRoot): string {
     const svgSymbols = layout.children.reduce((commands, node) => {
+        assert(node.x !== undefined);
+        assert(node.y !== undefined);
+        assert(node.width !== undefined);
+        assert(node.height !== undefined);
+
         const symbol = node.koppla.skin;
         assert(symbol !== undefined);
+
         const rotation = (node.koppla.rotation * 180) / Math.PI;
-        const reference = Math.max(symbol.size.x, symbol.size.y) / 2;
+        const sourceReference = {
+            x: symbol.size.x / 2,
+            y: symbol.size.y / 2,
+        };
+        const targetReference = {
+            x: node.x + node.width / 2,
+            y: node.y + node.height / 2,
+        };
+        const translation = {
+            x: targetReference.x - sourceReference.x,
+            y: targetReference.y - sourceReference.y,
+        };
         const figure = `<g transform="
-            translate(${round(node.x)}, ${round(node.y)})
-            rotate(${rotation},${reference},${reference})
+            translate(${round(translation.x)}, ${round(translation.y)})
+            rotate(${rotation},${sourceReference.x},${sourceReference.y})
         ">
             ${symbol?.svgData}
         </g>`;

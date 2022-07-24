@@ -17,7 +17,7 @@ async function main() {
     const compiled = compile(parsed, symbols);
     const skin = new Skin();
     await skin.load(skinFile);
-    const rendered = await render(compiled, symbols, skin);
+    const rendered = await render(compiled, symbols, skin, {optimize: true});
     console.log(rendered);
 }
 

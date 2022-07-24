@@ -12,6 +12,8 @@ declare type KopplaELKNode = ELKNode & {
 declare type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> & Pick<Required<ELKNode>, "edges"> & {
     children: KopplaELKNode[];
 };
-export declare function render(schematic: CompiledSchematic, symbols: SymbolLibrary, skin: Skin): Promise<string>;
+export declare function render(schematic: CompiledSchematic, symbols: SymbolLibrary, skin: Skin, options?: {
+    optimize: boolean;
+}): Promise<string>;
 export declare function optimize(root: KopplaELKRoot, preprocessed: KopplaELKRoot): KopplaELKRoot;
 export {};
