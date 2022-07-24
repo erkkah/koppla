@@ -7,7 +7,7 @@ import ELK, {
     LayoutOptions,
 } from "elkjs";
 
-const DEBUG = true;
+const DEBUG = false;
 
 import { CompiledSchematic, CompiledNode } from "./compiler";
 import { NumericValue, Value } from "./parser";

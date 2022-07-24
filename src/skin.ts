@@ -2,6 +2,7 @@ import assert from "assert";
 import { readFile } from "fs/promises";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { encodeSVGPath, SVGPathData } from "svg-pathdata";
+type SVGCommand = SVGPathData["commands"][0];
 
 interface XMLNode extends Record<string, unknown> {
     "@attrs": Record<string, string | undefined>;
@@ -22,7 +23,8 @@ interface SVGPath extends SVGElement {
 
 interface SVGCircle extends XMLNode {
     "@attrs": SVGElement["@attrs"] & {
-        d: string;
+        d?: string;
+        r?: string;
         cx: string;
         cy: string;
     };
@@ -129,10 +131,64 @@ function makeSymbolSkin(svg: SVGNode): SymbolSkin {
     return new SymbolSkin(translated, bounds.max, terminals);
 }
 
+function getPathEnd(commands: SVGCommand[]): Point {
+    assert(commands.length >= 1);
+    const last = commands[commands.length - 1];
+    assert(
+        last.type === SVGPathData.MOVE_TO ||
+            last.type === SVGPathData.LINE_TO ||
+            last.type === SVGPathData.HORIZ_LINE_TO ||
+            last.type === SVGPathData.VERT_LINE_TO
+    );
+
+    switch (last.type) {
+        case SVGPathData.MOVE_TO:
+        case SVGPathData.LINE_TO: {
+            const { x, y } = last;
+            return { x, y };
+        }
+        case SVGPathData.HORIZ_LINE_TO: {
+            const previousEnd = getPathEnd(
+                commands.slice(0, commands.length - 1)
+            );
+            const { x } = last;
+            const { y } = previousEnd;
+            return { x, y };
+        }
+        case SVGPathData.VERT_LINE_TO: {
+            const previousEnd = getPathEnd(
+                commands.slice(0, commands.length - 1)
+            );
+            const { y } = last;
+            const { x } = previousEnd;
+            return { x, y };
+        }
+    }
+}
+
+function getPathEndpoints(path: SVGPathData) {
+    assert(path.commands.length >= 2);
+
+    const abs = path.sanitize().toAbs();
+    const first = abs.commands[0];
+
+    assert(first.type === SVGPathData.MOVE_TO);
+
+    const { x: lastX, y: lastY } = getPathEnd(abs.commands);
+
+    return {
+        x1: first.x,
+        y1: first.y,
+        x2: lastX,
+        y2: lastY,
+    };
+}
+
 function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
     const terminalPaths = findTerminalPaths(svg);
     const terminalPoints = terminalPaths.map((path) => {
         const pathData = new SVGPathData(path["@attrs"].d);
+
         const terminal = pluckAttribute(path, "koppla:terminal");
         if (terminal === undefined) {
             return {};
@@ -140,40 +196,46 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
         assert(typeof terminal === "string");
 
         const bounds = pathData.getBounds();
-        if (bounds.minX === bounds.maxX) {
-            // vertical connector
+        const endPoints = getPathEndpoints(pathData);
 
-            if (bounds.minY < size.y / 2) {
-                // top connector
+        if (Math.round(bounds.minY) === 0) {
+            // top connector
 
-                return {
-                    [terminal]: { x: bounds.minX, y: bounds.minY },
-                };
-            } else {
-                // bottom connector
-
-                return {
-                    [terminal]: { x: bounds.minX, y: bounds.maxY },
-                };
-            }
-        } else {
-            assert(bounds.minY === bounds.maxY);
-            // horizontal connector
-
-            if (bounds.minX < size.x / 2) {
-                // left connector
-
-                return {
-                    [terminal]: { x: bounds.minX, y: bounds.minY },
-                };
-            } else {
-                // right connector
-
-                return {
-                    [terminal]: { x: bounds.maxX, y: bounds.minY },
-                };
-            }
+            const x =
+                endPoints.y1 === bounds.minY ? endPoints.x1 : endPoints.x2;
+            return {
+                [terminal]: { x, y: bounds.minY },
+            };
         }
+        if (Math.round(bounds.maxY) === Math.round(size.y)) {
+            // bottom connector
+
+            const x =
+                endPoints.y1 === bounds.maxY ? endPoints.x1 : endPoints.x2;
+            return {
+                [terminal]: { x, y: bounds.maxY },
+            };
+        }
+        if (Math.round(bounds.minX) === 0) {
+            // left connector
+
+            const y =
+                endPoints.x1 === bounds.minX ? endPoints.y1 : endPoints.y2;
+            return {
+                [terminal]: { x: bounds.minX, y },
+            };
+        }
+        if (Math.round(bounds.maxX) === Math.round(size.x)) {
+            // right connector
+
+            const y =
+                endPoints.x1 === bounds.maxX ? endPoints.y1 : endPoints.y2;
+            return {
+                [terminal]: { x: bounds.maxX, y },
+            };
+        }
+
+        assert(false, "Unexpected terminal position");
     });
     return terminalPoints.reduce((map, point) => {
         return {
@@ -236,6 +298,7 @@ function translateAndStripSVG(
             c["@attrs"] = {
                 style: attrs.style,
                 d: attrs.d,
+                r: attrs.r,
                 cx,
                 cy,
             };
@@ -308,7 +371,7 @@ function getSVGBounds(svg: SVGNode): Bounds {
     if (svg.circle !== undefined) {
         for (const c of svg.circle) {
             const attrs = c["@attrs"];
-            const r = Number(attrs.d) / 2;
+            const r = "r" in attrs ? Number(attrs.r) : Number(attrs.d) / 2;
             const cx = Number(attrs.cx);
             const cy = Number(attrs.cy);
             const cMinX = cx - r;
@@ -340,7 +403,15 @@ function getSVGBounds(svg: SVGNode): Bounds {
         }
     }
 
-    return { min, max };
+    try {
+        assert(Number.isFinite(min.x));
+        assert(Number.isFinite(min.y));
+        assert(Number.isFinite(max.x));
+        assert(Number.isFinite(max.y));
+        return { min, max };
+    } catch (err) {
+        throw err;
+    }
 }
 
 function pluckAttribute(svg: XMLNode, attribute: string): string | undefined {

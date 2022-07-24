@@ -1,5 +1,6 @@
 import assert from "assert";
 import { join } from "path";
+import { SVGPathData } from "svg-pathdata";
 import { Skin } from "./skin";
 
 const skinFile = join(__dirname, "..", "Electrical_symbols_library.svg");
@@ -27,4 +28,8 @@ describe("Skin", () => {
     });
 
 
+    it("parses pathdata ok", () => {
+        const parsed = new SVGPathData("m 1037.75,710.41665 h 35");
+        expect(parsed.commands).toHaveLength(2);
+    });
 });

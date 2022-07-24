@@ -14,7 +14,8 @@ interface SVGPath extends SVGElement {
 }
 interface SVGCircle extends XMLNode {
     "@attrs": SVGElement["@attrs"] & {
-        d: string;
+        d?: string;
+        r?: string;
         cx: string;
         cy: string;
     };
