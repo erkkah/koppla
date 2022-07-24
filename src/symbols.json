@@ -13,7 +13,7 @@
     },
     "D": {
         "ID": "diode",
-        "terminals": ["a", "b"]
+        "terminals": ["a", "c"]
     },
     "Q": {
         "ID": "bjt_npn",
@@ -27,28 +27,44 @@
         "ID": "bjt_pnp",
         "terminals": ["c", "b", "e"]
     },
+    "JFET": {
+        "ID": "jfet_n",
+        "terminals": ["g", "s", "d"]
+    },
+    "NJFET": {
+        "ID": "jfet_n",
+        "terminals": ["g", "s", "d"]
+    },
+    "PFET": {
+        "ID": "jfet_p",
+        "terminals": ["g", "s", "d"]
+    },
     "MOSFET": {
         "ID": "mosfet_n_e",
-        "terminals": ["c", "b", "e"]
+        "terminals": ["g", "s", "d"]
     },
     "NMOSFET": {
         "ID": "mosfet_n_e",
-        "terminals": ["c", "b", "e"]
+        "terminals": ["g", "s", "d"]
     },
     "PMOSFET": {
         "ID": "mosfet_p_e",
-        "terminals": ["c", "b", "e"]
+        "terminals": ["g", "s", "d"]
     },
     "IN": {
         "ID": "input",
-        "terminals": ["in"]
+        "terminals": ["i"]
     },
     "OUT": {
         "ID": "output",
-        "terminals": ["in"]
+        "terminals": ["o"]
     },
     "V": {
         "ID": "voltage",
-        "terminals": ["+", "-"]
+        "terminals": ["v"]
+    },
+    "GND": {
+        "ID": "ground",
+        "terminals": ["g"]
     }
 }

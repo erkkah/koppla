@@ -40,7 +40,7 @@ describe("parse components", () => {
             "|]",
             ">|",
             "()",
-            "::"
+            "**"
         ]
         for (const component of components) {
             parser.parse(component);
@@ -71,11 +71,11 @@ describe("parse components", () => {
     });
 
     it("parses part spec", () => {
-        parser.parse(":!integrator:");
+        parser.parse("*!integrator*");
     })
 
     it("parses generic part with designator and value", () => {
-        parser.parse(":R78:19k:")
+        parser.parse("*R78:19k*")
     });
 
     it("parses a complete thing", () => {
@@ -102,6 +102,15 @@ describe("parse parts", () => {
     it("parses part definition", () => {
         parser.parse("R1: 1k \"main\"\n");
     });
+
+    it("parses components and parts", () => {
+        const code = `
+        [D1] - [D2]
+        
+        R1: 1k
+        `;
+        parser.parse(code);
+    })
 });
 
 describe("parse connections", () => {
@@ -219,4 +228,16 @@ describe("validate parsed structure", () => {
             value: "TL072"
         });
     });
+
+    it("components and parts", () => {
+        const code = `
+        [R1] - [R2]
+        #[R1]a - :GND:
+        
+        R1: 1k
+        `;
+        const schematic = parse(code);
+        expect(schematic.body).toHaveLength(2);
+        
+    })
 });

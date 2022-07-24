@@ -27,19 +27,19 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.2755555"
-     inkscape:cx="1286.1063"
-     inkscape:cy="1057.9704"
+     inkscape:zoom="3.6078159"
+     inkscape:cx="141.22117"
+     inkscape:cy="1030.1246"
      inkscape:document-units="px"
-     inkscape:current-layer="g3319"
+     inkscape:current-layer="g1080"
      showgrid="true"
      units="px"
      inkscape:snap-text-baseline="true"
-     inkscape:window-width="1390"
-     inkscape:window-height="1205"
+     inkscape:window-width="2560"
+     inkscape:window-height="1387"
      inkscape:window-x="0"
      inkscape:window-y="25"
-     inkscape:window-maximized="0"
+     inkscape:window-maximized="1"
      inkscape:snap-center="false"
      inkscape:snap-object-midpoints="false"
      inkscape:lockguides="false"
@@ -1341,13 +1341,16 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
        style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     <g
        id="g1080"
-       transform="translate(0,-35)">
+       transform="translate(0,-35)"
+       koppla:symbol="input"
+       koppla:rotation="0">
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
          id="path7873"
          d="M 70,514.41665 H 54.25"
-         style="fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         style="fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         koppla:terminal="i" />
       <circle
          r="5.25"
          cy="514.41663"
@@ -1357,7 +1360,9 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g2699"
-       transform="matrix(2,0,0,2,-21.58251,204.54647)">
+       transform="matrix(2,0,0,2,-21.58251,204.54647)"
+       koppla:symbol="ground"
+       koppla:rotation="0">
       <path
          inkscape:connector-curvature="0"
          id="path3216"
@@ -1369,7 +1374,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          id="path3218"
          d="m 63.291255,133.93509 v -7"
          style="fill:none;stroke:#000000;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="g" />
     </g>
     <g
        id="g2396"
@@ -1516,12 +1522,15 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        transform="matrix(1,0,0,-1,-56,902.8333)"
-       id="g1206">
+       id="g1206"
+       koppla:symbol="voltage"
+       koppla:rotation="0">
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 217,500.41665 v -14"
          id="path1202"
-         inkscape:connector-curvature="0" />
+         inkscape:connector-curvature="0"
+         koppla:terminal="v" />
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:bevel;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 196,500.41665 h 42 l -21,21 z"
@@ -2619,7 +2628,7 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          id="path2520"
          d="M 854.00002,262.41665 H 868"
          style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-         koppla:terminal="k" />
+         koppla:terminal="c" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -4121,7 +4130,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g3311"
-       transform="translate(-1.75,-35)">
+       transform="translate(-1.75,-35)"
+       koppla:symbol="bjt_pnp">
       <circle
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          id="circle3215"
@@ -4133,7 +4143,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          d="m 1037.75,815.41665 h 35"
          id="path3217"
          inkscape:connector-curvature="0"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="b" />
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:7;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1072.75,797.91665 v 35"
@@ -4144,12 +4155,14 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1072.75,806.66665 21,-15.75 v -17.5"
          id="path3221"
-         inkscape:connector-curvature="0" />
+         inkscape:connector-curvature="0"
+         koppla:terminal="e" />
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1093.75,857.41665 v -17.5 l -21,-15.75"
          id="path3223"
-         inkscape:connector-curvature="0" />
+         inkscape:connector-curvature="0"
+         koppla:terminal="c" />
       <path
          style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1085,803.16665 -5.25,-7 -4.375,8.75 z"
@@ -4267,7 +4280,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g3462"
-       transform="translate(-7,-35)">
+       transform="translate(-7,-35)"
+       koppla:symbol="jfet_p">
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
@@ -4279,18 +4293,21 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          d="m 1270.5,801.41665 h 17.5 v -21"
          id="path3380"
          inkscape:connector-curvature="0"
-         sodipodi:nodetypes="ccc" />
+         sodipodi:nodetypes="ccc"
+         koppla:terminal="d" />
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1270.5,829.41665 h 17.5 v 21"
          id="path3382"
-         inkscape:connector-curvature="0" />
+         inkscape:connector-curvature="0"
+         koppla:terminal="s" />
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1239,801.41665 h 29.75"
          id="path3384"
          inkscape:connector-curvature="0"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="g" />
       <path
          style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1253,801.41665 10.5,-5.25 v 10.5 z"
@@ -4306,7 +4323,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g3454"
-       transform="translate(-7,-28)">
+       transform="translate(-7,-28)"
+       koppla:symbol="jfet_n">
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:7;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1270.5,692.91665 v 35"
@@ -4318,18 +4336,21 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          inkscape:connector-curvature="0"
          id="path3363"
          d="m 1270.5,696.41665 h 17.5 v -21"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         koppla:terminal="d" />
       <path
          inkscape:connector-curvature="0"
          id="path3365"
          d="m 1270.5,724.41665 h 17.5 v 21"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         koppla:terminal="s" />
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
          id="path3367"
          d="m 1239,724.41665 h 29.75"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         koppla:terminal="g" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -4345,19 +4366,22 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g3532"
-       transform="translate(0,-28)">
+       transform="translate(0,-28)"
+       koppla:symbol="mosfet_n_e">
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1351,696.41665 h 21 v -21"
          id="path3466"
          inkscape:connector-curvature="0"
-         sodipodi:nodetypes="ccc" />
+         sodipodi:nodetypes="ccc"
+         koppla:terminal="d" />
       <path
          sodipodi:nodetypes="ccc"
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1351,724.41665 h 21 v 21"
          id="path3468"
-         inkscape:connector-curvature="0" />
+         inkscape:connector-curvature="0"
+         koppla:terminal="s" />
       <circle
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:square;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          id="circle3474"
@@ -4373,7 +4397,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          inkscape:connector-curvature="0"
          id="path3488"
          d="m 1344,724.41665 h -21"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         koppla:terminal="g" />
       <path
          inkscape:connector-curvature="0"
          id="path3490"
@@ -4403,19 +4428,22 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:3.5;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
     <g
-       id="g3869">
+       id="g3869"
+       koppla:symbol="mosfet_p_e">
       <path
          sodipodi:nodetypes="ccc"
          inkscape:connector-curvature="0"
          id="path3502"
          d="m 1351,766.41665 h 21 v -21"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         koppla:terminal="s" />
       <path
          inkscape:connector-curvature="0"
          id="path3504"
          d="m 1351,794.41665 h 21 v 21"
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
-         sodipodi:nodetypes="ccc" />
+         sodipodi:nodetypes="ccc"
+         koppla:terminal="d" />
       <circle
          r="28"
          cy="780.41663"
@@ -4458,7 +4486,8 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          inkscape:connector-curvature="0"
          id="path3536"
          d="m 1344,766.41665 h -21"
-         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         koppla:terminal="g" />
     </g>
     <g
        id="g3691"
@@ -7796,6 +7825,25 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          id="path3007-1"
          inkscape:connector-curvature="0"
          sodipodi:nodetypes="cc" />
+    </g>
+    <g
+       id="g1080-7"
+       transform="matrix(-1,0,0,1,113.4189,-5.7860852)"
+       koppla:symbol="output"
+       koppla:rotation="0">
+      <path
+         sodipodi:nodetypes="cc"
+         inkscape:connector-curvature="0"
+         id="path7873-3"
+         d="M 70,514.41665 H 54.25"
+         style="fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         koppla:terminal="o" />
+      <circle
+         r="5.25"
+         cy="514.41663"
+         cx="49"
+         id="path1076-8"
+         style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
     </g>
   </g>
 </svg>

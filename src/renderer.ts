@@ -33,7 +33,7 @@ export async function render(
         const symbolInfo = symbols.lookup(node.symbol);
         const symbolSkin = skin.findSymbol(symbolInfo.ID);
         if (symbolSkin === undefined) {
-            throw new Error(`Symbol ${symbolInfo.ID} not found in skin`);
+            throw new Error(`Symbol "${symbolInfo.ID}" not found in skin`);
         }
         const terminals = symbolSkin.terminals;
 
@@ -42,7 +42,7 @@ export async function render(
                 const portPoint = terminals[terminal];
                 if (portPoint === undefined) {
                     throw new Error(
-                        `Symbol ${symbolInfo.ID} terminal ${terminal} not found in skin`
+                        `Symbol ${symbolInfo.ID} terminal "${terminal}" not found in skin`
                     );
                 }
                 return {
@@ -58,6 +58,16 @@ export async function render(
         const width = symbolSkin.size.x;
         const height = symbolSkin.size.y;
 
+        let layoutOptions: Record<string, unknown> = {};
+        if (node.ID.startsWith("GND")) {
+            layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
+                "LAST";
+        }
+        if (node.ID.startsWith("V")) {
+            layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
+                "FIRST";
+        }
+
         return {
             id: node.ID,
             labels: labelsFromNode(node),
@@ -65,6 +75,7 @@ export async function render(
             height,
             koppla: { node, rotation: 0 },
             ports,
+            layoutOptions,
         };
     });
 
@@ -86,7 +97,36 @@ export async function render(
         "org.eclipse.elk.direction": "DOWN",
         "org.eclipse.elk.edgeRouting": "ORTHOGONAL",
         "org.eclipse.elk.spacing.labelLabel": 3,
+        "org.eclipse.elk.layered.layering.strategy": "LONGEST_PATH",
+        "org.eclipse.elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
+        "org.eclipse.elk.layered.compaction.postCompaction.strategy": "LEFT",
+        "org.eclipse.elk.edge.thickness": 3.5,
     };
+
+    /*
+        org.eclipse.elk.layered.layering.strategy:
+        NETWORK_SIMPLEX
+        LONGEST_PATH
+        COFFMAN_GRAHAM (@AdvancedPropertyValue)
+        INTERACTIVE (@AdvancedPropertyValue)
+        STRETCH_WIDTH (@ExperimentalPropertyValue)
+        MIN_WIDTH (@ExperimentalPropertyValue)
+
+        org.eclipse.elk.layered.nodePlacement.strategy:
+        SIMPLE
+        INTERACTIVE (@AdvancedPropertyValue)
+        LINEAR_SEGMENTS
+        BRANDES_KOEPF
+        NETWORK_SIMPLEX
+
+        org.eclipse.elk.layered.compaction.postCompaction.strategy:
+        NONE
+        LEFT
+        RIGHT
+        LEFT_RIGHT_CONSTRAINT_LOCKING
+        LEFT_RIGHT_CONNECTION_LOCKING
+        EDGE_LENGTH
+    */
 
     const prePass = (await elk.layout(
         cloneWithSkin(graph, symbols, skin, { squareBoundingBox: true }),
@@ -184,7 +224,7 @@ export function optimize(
 
 /**
  * Rotates a node to move ports to an optimal position.
- * 
+ *
  * @param fixed Unprocessed node
  * @param processed Preprocessed node, laid out with no port restrictions
  * @returns Shallow copy of the fixed node in a rotation which minimizes the
@@ -219,7 +259,7 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
     const bestNode = rotatedNode(fixed, minIndex, {
         makeSquare: false,
     });
-    bestNode.koppla.rotation = rotations[minIndex] * Math.PI / 2;
+    bestNode.koppla.rotation = (rotations[minIndex] * Math.PI) / 2;
     if (minIndex === 1 || minIndex === 3) {
         [bestNode.width, bestNode.height] = [bestNode.height, bestNode.width];
     }
@@ -261,7 +301,7 @@ function rotatedNode<T extends ELKNode>(
     const xAdjust = options.makeSquare ? (width - node.width) / 2 : 0;
     const yAdjust = options.makeSquare ? (height - node.height) / 2 : 0;
 
-    const originMoves = (steps % 2 !== 0) && !options.makeSquare;
+    const originMoves = steps % 2 !== 0 && !options.makeSquare;
     const rotatedNodeOrigin = originMoves
         ? {
               x: (node.width - node.height) / 2,

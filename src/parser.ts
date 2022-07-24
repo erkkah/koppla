@@ -75,8 +75,8 @@ function validComponentDelimiters(start: string, end: string): boolean {
             return end === ")";
         case "$":
             return end === "$";
-        case ":":
-            return end === ":";
+        case "*":
+            return end === "*";
         case "/":
             return end === "/";
         default:
@@ -103,7 +103,7 @@ export function createParser(): Parser {
         }
     }}
 
-    Start = WSC schematic:Schematic WSC {
+    Start = WSC schematic:Schematic WSC EOF? {
         return schematic;
     }
 
@@ -122,7 +122,7 @@ export function createParser(): Parser {
 
     WSC = (WhiteSpace / Comment)*
 
-    WhiteSpace = [ \\t\\r\\n]
+    WhiteSpace "whitespace" = [ \\t\\r\\n]
 
     EOL = [\\n\\r]
 
@@ -151,11 +151,8 @@ export function createParser(): Parser {
                 connections: connections ?? []
             };
         }
-    Part = definition:Definition EOL {
-        return {
-            type: "Part",
-            definition
-        };
+    Part = definition:PartDefinition {
+        return definition;
     }
     Port "port" = "<" id:Identifier spec:PortSpecifier? ">" {
         return {
@@ -168,7 +165,7 @@ export function createParser(): Parser {
         return id;
     }
     Wire = "-"
-    Terminal = Character / [+-]
+    Terminal "terminal" = Character / [+-]
     Component = open:Open WSC definition:Definition? WSC close:Close {
         if (!validComponentDelimiters(open, close)) {
             error("Invalid component");
@@ -180,41 +177,66 @@ export function createParser(): Parser {
             close
         };
     }
-    Open "component start" = "[" / "|" / ">" / "(" / "$" / ":" / "/"
-    Close "component end" = "]" / "|" / "]" / ")" / "$" / ":" / "/"
+    Open "component start" = "[" / "|" / ">" / "(" / "$" / "*" / "/"
+    Close "component end" = "]" / "|" / "]" / ")" / "$" / "*" / "/"
+    PartDefinition =
+        designatorAndValue: DesignatorAndValue
+        WSC
+        symbolAndDescription: SymbolAndDescription {
+            return {
+                type: "Definition",
+                ...designatorAndValue,
+                ...symbolAndDescription
+            };            
+        }
     Definition =
-        designatorAndValue: (
-            (
-                designator:Designator WSC ":" WSC value: Value {
-                    return {
-                        designator,
-                        value
-                    };
-                }
-            )
-            /
-            (
-                designator:Designator {return {designator};}
-                /
-                value:Value {return {value};}
-            )
-        )?
-        WSC symbol: ("!" id: Identifier {return id;})?
-        WSC description: Description?
+        designatorAndValue: DesignatorAndValue?
+        WSC
+        symbolAndDescription: SymbolAndDescription
         {
             return {
                 type: "Definition",
                 ...designatorAndValue,
+                ...symbolAndDescription
+            };
+        }
+    DesignatorAndValue =
+        (
+            designator:Designator WSC ":" WSC value: Value {
+                return {
+                    designator,
+                    value
+                };
+            }
+        )
+        /
+        (
+            designator:Designator {return {designator};}
+            /
+            value:Value {return {value};}
+        )
+    SymbolAndDescription = 
+        symbol: Symbol?
+        WSC
+        description: Description?
+        {
+            return {
                 symbol,
                 description
             };
         }
-    Designator = designator:Alpha index:Integer {
+    Symbol "symbol" = "!" id:Identifier {return id;}
+    Designator "designator" = (WSC designator:Alpha index:Integer {
         return {
             designator,
             index: parseInt(index, 10),
         };
-    }
+    }) / (designator: ("GND"i / "IN"i / "OUT"i) {
+        return {
+            designator,
+            index: 0,
+        }
+    })
     Value "value" = (value: Decimal prefix: Prefix? unit: Unit? {
         return {
             type: "NumericValue",
@@ -228,7 +250,7 @@ export function createParser(): Parser {
             value
         };
     })
-    Identifier "identifier" = $(Alpha+ (Integer Alpha?)*)
+    Identifier "identifier" = $(Alpha (Integer Alpha?)*)
     Description "description" = QuotedString
     
     Space "white space" = [ \\t\\n]+
@@ -237,9 +259,9 @@ export function createParser(): Parser {
     QuotedString = '"' chars:StringCharacter* '"' {return chars && chars.join("");}
     StringCharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
     Integer = $[0-9]+
-    Decimal = $[0-9.]+
+    Decimal = $[0-9.+-]+
     Prefix = "p" / "n" / "u" / "m" / "k" / "M" / "G"
-    Unit = Alpha
+    Unit "unit" = Alpha
 `;
     try {
         const parser = generate(grammar, { trace: false });

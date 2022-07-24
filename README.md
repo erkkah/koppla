@@ -11,3 +11,4 @@ https://en.wikipedia.org/wiki/Reference_designator#Other_designators
 * Draw junctions
 * Pick and embed font
 * Optimize svg output
+* Scale symbols based on terminal width

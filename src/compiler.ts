@@ -205,9 +205,12 @@ export class CompiledSchematic {
 
         for (const connection of this.connections) {
             const sourceSymbol = nodeSymbol(connection.source.ID);
-            assert(sourceSymbol.terminals.length >= 2);
+            assert(sourceSymbol.terminals.length >= 1);
             const sourceTerminal =
-                connection.sourceTerminal ?? sourceSymbol.terminals[1];
+                connection.sourceTerminal ??
+                (sourceSymbol.terminals.length > 1
+                    ? sourceSymbol.terminals[1]
+                    : sourceSymbol.terminals[0]);
 
             const targetSymbol = nodeSymbol(connection.target.ID);
             assert(targetSymbol.terminals.length >= 1);
@@ -337,8 +340,8 @@ function componentTypeFromDelimiters(
                 return "U";
             }
             break;
-        case ":":
-            if (close === ":") {
+        case "*":
+            if (close === "*") {
                 return undefined;
             }
     }
