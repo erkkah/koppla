@@ -316,7 +316,6 @@ function translateAndStripSVG(
             const cy = String(Number(attrs.cy) + yAdjust);
             c["@attrs"] = {
                 style: attrs.style,
-                d: attrs.d,
                 r: attrs.r,
                 cx,
                 cy,

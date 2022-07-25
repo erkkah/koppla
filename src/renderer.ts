@@ -482,6 +482,15 @@ function renderSVG(layout: KopplaELKRoot): string {
         return commands;
     }, [] as string[]);
 
+
+    const svgJunctions = layout.edges.flatMap((edge) => {
+        return edge.junctionPoints?.map((point) => {
+            const x = round(Number(point.x));
+            const y = round(Number(point.y));
+            return `<circle cx="${x}" cy="${y}" r="5" style="fill:#000000"/>`;
+        });
+    });
+
     const svgLabels = layout.children.flatMap((node) => {
         const labels = node.labels ?? [];
         return labels.map((label) => {
@@ -502,6 +511,7 @@ function renderSVG(layout: KopplaELKRoot): string {
     }" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
         ${svgSymbols.join("")}
         ${svgWires.join("")}
+        ${svgJunctions.join("")}
         ${svgLabels.join("")}
         </svg>`;
 }

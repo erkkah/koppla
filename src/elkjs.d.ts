@@ -42,6 +42,7 @@ declare module 'elkjs' {
         sources: ID[];
         targets: ID[];
         sections?: EdgeSection[];
+        junctionPoints?: Point[];
         labels?: Label[];
     }
 
