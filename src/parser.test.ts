@@ -118,6 +118,9 @@ describe("parse ports", () => {
         parser.parse("<in:main>");
     });
 
+    it("parses voltage port", () => {
+        parser.parse("<v:+5v>");
+    });
 });
 
 describe("parse parts", () => {
@@ -220,7 +223,7 @@ describe("validate parsed structure", () => {
         assert(connection.type === "Connection");
         assert(connection.source.type === "Port");
         const source = connection.source;
-        expect(source.identifier).toBe("in");
+        expect(source.kind).toBe("in");
         expect(source.specifier).toBe("main");
 
         expect(connection.connections).toHaveLength(1);

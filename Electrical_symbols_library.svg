@@ -27,11 +27,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.6078159"
-     inkscape:cx="141.22117"
-     inkscape:cy="1030.1246"
+     inkscape:zoom="1.2755555"
+     inkscape:cx="527.22126"
+     inkscape:cy="1124.608"
      inkscape:document-units="px"
-     inkscape:current-layer="g1080"
+     inkscape:current-layer="layer1"
      showgrid="true"
      units="px"
      inkscape:snap-text-baseline="true"
@@ -1524,7 +1524,7 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
        transform="matrix(1,0,0,-1,-56,902.8333)"
        id="g1206"
        koppla:symbol="voltage"
-       koppla:rotation="0">
+       koppla:rotation="2">
       <path
          style="opacity:1;fill:none;fill-opacity:1;fill-rule:nonzero;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 217,500.41665 v -14"
@@ -7830,7 +7830,7 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
        id="g1080-7"
        transform="matrix(-1,0,0,1,113.4189,-5.7860852)"
        koppla:symbol="output"
-       koppla:rotation="0">
+       koppla:rotation="2">
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"

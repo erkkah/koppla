@@ -28,7 +28,7 @@ export interface Component {
 }
 export interface Port {
     type: "Port";
-    identifier: "in" | "out" | "gnd" | "v";
+    kind: "in" | "out" | "gnd" | "v";
     specifier?: string;
 }
 export declare type Node = Component | Port;

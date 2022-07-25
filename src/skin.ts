@@ -59,7 +59,8 @@ export class SymbolSkin {
     constructor(
         readonly svg: SVGNode,
         readonly size: Point,
-        readonly terminals: Record<string, Point>
+        readonly terminals: Record<string, Point>,
+        readonly options?: { rotationSteps?: number; scale?: number }
     ) {}
 
     get svgData(): string {
@@ -114,7 +115,11 @@ export class Skin {
         let result: SymbolSkin | undefined = undefined;
 
         if (found !== undefined) {
-            result = makeSymbolSkin(found);
+            try {
+                result = makeSymbolSkin(found);
+            } catch (err) {
+                throw new Error(`Failed to load symbol "${symbol}": ${err}`);
+            }
         }
 
         this.cache[symbol] = result;
@@ -124,11 +129,11 @@ export class Skin {
 
 function makeSymbolSkin(svg: SVGNode): SymbolSkin {
     const initialBounds = getSVGBounds(svg);
+    const rotation = extractRotation(svg);
     const translated = translateAndStripSVG(svg, initialBounds);
     const bounds = getSVGBounds(translated);
     const terminals = extractTerminals(translated, bounds.max);
-
-    return new SymbolSkin(translated, bounds.max, terminals);
+    return new SymbolSkin(translated, bounds.max, terminals, { rotationSteps: rotation });
 }
 
 function getPathEnd(commands: SVGCommand[]): Point {
@@ -182,6 +187,20 @@ function getPathEndpoints(path: SVGPathData) {
         x2: lastX,
         y2: lastY,
     };
+}
+
+function extractRotation(svg: SVGNode): number | undefined {
+    const rotationAttribute = pluckAttribute(svg, "koppla:rotation");
+    if (rotationAttribute !== undefined) {
+        const rotation = Number(rotationAttribute);
+        if (!Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
+            throw new Error(
+                `Invalid symbol rotation ${rotation}, should be an integer in range [0,3]`
+            );
+        }
+        return rotation;
+    }
+    return undefined;
 }
 
 function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {

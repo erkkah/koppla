@@ -45,7 +45,14 @@ export declare class SymbolSkin {
     readonly svg: SVGNode;
     readonly size: Point;
     readonly terminals: Record<string, Point>;
-    constructor(svg: SVGNode, size: Point, terminals: Record<string, Point>);
+    readonly options?: {
+        rotationSteps?: number | undefined;
+        scale?: number | undefined;
+    } | undefined;
+    constructor(svg: SVGNode, size: Point, terminals: Record<string, Point>, options?: {
+        rotationSteps?: number | undefined;
+        scale?: number | undefined;
+    } | undefined);
     get svgData(): string;
 }
 export declare class Skin {

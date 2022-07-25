@@ -7,8 +7,8 @@ Code electronic schematics using a simple syntax.
 ```
 # An example schematic
 
-*IN* - [R1:10k] - |4.7uF| - *gnd*
-[R1] - *out*
+<in> - [R1:10k] - |4.7uF| - <gnd>
+[R1] - <out>
 ```
 
 ![](example.svg)
@@ -32,7 +32,8 @@ Code electronic schematics using a simple syntax.
 
 *Note that unconnected components are coded without the wires shown here.*
 
-The component definition is written between the opening and closing character, for resistors '[' and ']'. An empty definition is valid. Components will be given default identities (R1, R2, et.c.) if none is specified.
+The component definition is written between the opening and closing character, for resistors '[' and ']'.
+An empty definition is valid. Components will be given default identities (R1, R2, et.c.) if none is specified.
 
 #### Component definition
 
@@ -55,6 +56,9 @@ All parts are optional, simply specifying a value is fine:
 ```
 
 If no symbol is specified, the default symbol for the component type is used.
+Component ID and value needs to be separated by a colon if both are specified.
+
+### Ports
 
 ### Connections
 
@@ -80,11 +84,11 @@ A wire on the left hand side connects to the first terminal, and a wire on the r
 
 ## TODO
 
+* Rotation-lock inputs, outputs, power lines
 * Better error handling + reporting
 * Make it a syntax error to use the wrong designator / symbol mix
 * Make diodes and polarized caps work in both directions, flipping terminals as needed
 * Add enough components to create astable flip-flop, opamp filter
-* Rotation-lock inputs, outputs, power lines
 * Add "h-flip" after rotation as possible optimization step
 * Make component label / value drawing optional
 * Draw junctions

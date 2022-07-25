@@ -33,6 +33,7 @@ interface CompiledConnection {
 
 export interface CompiledNode {
     ID: string;
+    designator: string;
     symbol: string;
     description?: string;
     value?: Value;
@@ -48,12 +49,14 @@ export class CompiledSchematic {
     private getNodes(): CompiledNode[] {
         const portNodes: CompiledNode[] = this.ports.map((port) => ({
             ID: port.ID.ID,
+            designator: port.kind,
             symbol: port.kind,
         }));
 
         const componentNodes: CompiledNode[] = this.components.map(
             (component) => ({
                 ID: component.ID.ID,
+                designator: component.designator.designator,
                 symbol: component.symbol ?? component.designator.designator,
                 description: component.description,
                 value: component.value,
@@ -126,7 +129,7 @@ export class CompiledSchematic {
         const found = this.ports.find((p) => p.ID.ID === ID);
         if (!found) {
             this.ports.push({
-                kind: port.identifier,
+                kind: port.kind,
                 ID: nodeID,
             });
         }
@@ -226,10 +229,10 @@ export class CompiledSchematic {
 }
 
 function portID(port: Port): string {
-    if (port.specifier === undefined) {
-        return port.identifier;
+    if (port.specifier == undefined) {
+        return port.kind;
     }
-    return `${port.identifier}:${port.specifier}`;
+    return `${port.kind}:${port.specifier}`;
 }
 
 export function compile(

@@ -34,7 +34,7 @@ export interface Component {
 
 export interface Port {
     type: "Port";
-    identifier: "in" | "out" | "gnd" | "v";
+    kind: "in" | "out" | "gnd" | "v";
     specifier?: string;
 }
 
@@ -154,15 +154,15 @@ export function createParser(): Parser {
     Part = definition:PartDefinition {
         return definition;
     }
-    Port "port" = "<" id:Identifier spec:PortSpecifier? ">" {
+    Port "port" = "<" kind:PortKind spec:PortSpecifier? ">" {
         return {
             type: "Port",
-            identifier: id,
+            kind: kind,
             specifier: spec
         };
     }
-    PortSpecifier = ":" id:Identifier {
-        return id;
+    PortSpecifier = ":" spec:AlphaNumeric {
+        return spec;
     }
     Wire = "-"
     Terminal "terminal" = Character / [+-]
@@ -180,7 +180,7 @@ export function createParser(): Parser {
     Open "component start" = "[" / "|" / ">" / "(" / "$" / "*" / "/"
     Close "component end" = "]" / "|" / "<" / ")" / "$" / "*" / "/"
     PartDefinition =
-        designator: Designator
+        designator: Designator ":"
         WSC
         value: Value?
         WSC
@@ -229,17 +229,12 @@ export function createParser(): Parser {
             };
         }
     Symbol "symbol" = "!" id:Identifier {return id;}
-    Designator "designator" = (WSC designator:Alpha index:Integer {
+    Designator "designator" = WSC designator:Alpha index:Integer {
         return {
             designator,
             index: parseInt(index, 10),
         };
-    }) / (designator: ("GND"i / "IN"i / "OUT"i) {
-        return {
-            designator,
-            index: 0,
-        }
-    })
+    }
     Value "value" = (value: Decimal prefix: Prefix? unit: Unit? !AlphaNumeric {
         return {
             type: "NumericValue",
@@ -253,6 +248,9 @@ export function createParser(): Parser {
             value
         };
     })
+    PortKind "port kind" = kind:("GND"i / "IN"i / "OUT"i / "V"i) {
+        return kind.toLowerCase();
+    }
     Identifier "identifier" = $(Alpha (Integer Alpha?)*)
     Description "description" = QuotedString
     
@@ -263,8 +261,9 @@ export function createParser(): Parser {
     StringCharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
     Integer = $Numeric+
     Numeric = [0-9]
-    AlphaNumeric = $(Character / Numeric)+
-    Decimal = $[0-9.+-]+
+    AlphaNumeric = $(Character / Numeric / Sign)+
+    Decimal = $(Sign?[0-9]+[.]?[0-9]*)
+    Sign = "+" / "-"
     Prefix = "p" / "n" / "u" / "m" / "k" / "M" / "G"
     Unit "unit" = Alpha
 `;

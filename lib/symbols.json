@@ -51,19 +51,19 @@
         "ID": "mosfet_p_e",
         "terminals": ["g", "s", "d"]
     },
-    "IN": {
+    "in": {
         "ID": "input",
         "terminals": ["i"]
     },
-    "OUT": {
+    "out": {
         "ID": "output",
         "terminals": ["o"]
     },
-    "V": {
+    "v": {
         "ID": "voltage",
         "terminals": ["v"]
     },
-    "GND": {
+    "gnd": {
         "ID": "ground",
         "terminals": ["g"]
     }

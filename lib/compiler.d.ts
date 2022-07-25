@@ -13,6 +13,7 @@ interface CompiledConnection {
 }
 export interface CompiledNode {
     ID: string;
+    designator: string;
     symbol: string;
     description?: string;
     value?: Value;

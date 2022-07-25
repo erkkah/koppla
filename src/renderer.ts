@@ -59,11 +59,11 @@ export async function render(
         const height = symbolSkin.size.y;
 
         let layoutOptions: Record<string, unknown> = {};
-        if (node.ID.startsWith("GND")) {
+        if (node.designator === "gnd") {
             layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
                 "LAST";
         }
-        if (node.ID.startsWith("V")) {
+        if (node.designator === "v") {
             layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
                 "FIRST";
         }
@@ -158,11 +158,12 @@ export async function render(
 
 function setupLabelPlacements(graph: KopplaELKRoot) {
     type Edge = "N" | "S" | "E" | "W";
-    const portEdges: Edge[] = [];
-
+    
     for (const child of graph.children) {
         assert(child.width !== undefined);
         assert(child.height !== undefined);
+
+        const portEdges: Edge[] = [];
 
         for (const port of child.ports ?? []) {
             assert(port.x !== undefined);
@@ -188,15 +189,22 @@ function setupLabelPlacements(graph: KopplaELKRoot) {
 
         let placement = "OUTSIDE";
 
-        if (!portEdges.includes("N")) {
-            placement = "OUTSIDE H_CENTER V_TOP";
-        } else if (!portEdges.includes("S")) {
-            placement = "OUTSIDE H_CENTER V_BOTTOM";
-        } else if (!portEdges.includes("E")) {
-            placement = "OUTSIDE H_RIGHT V_CENTER";
-        } else if (!portEdges.includes("W")) {
-            placement = "OUTSIDE H_LEFT V_CENTER";
+        const placements: Record<Edge, string> = {
+            "N": "OUTSIDE H_CENTER V_TOP",
+            "S": "OUTSIDE H_CENTER V_BOTTOM",
+            "E": "OUTSIDE H_RIGHT V_CENTER",
+            "W": "OUTSIDE H_LEFT V_CENTER",
+        };
+
+        const edgePriorities: Edge[] = ["W", "E", "N", "S"];
+
+        for (const edge of edgePriorities) {
+            if (!portEdges.includes(edge)) {
+                placement = placements[edge];
+                break;
+            }
         }
+
         child.layoutOptions = {
             ...child.layoutOptions,
             "org.eclipse.elk.nodeLabels.placement": placement,
@@ -216,14 +224,15 @@ export function optimize(
     preprocessed: KopplaELKRoot
 ): KopplaELKRoot {
     for (const i in preprocessed.children) {
-        const child = preprocessed.children[i];
-        root.children[i] = rotateNode(root.children[i], child);
+        const preChild = preprocessed.children[i];
+        const child = root.children[i];
+        root.children[i] = rotateNode(child, preChild);
     }
     return root;
 }
 
 /**
- * Rotates a node to move ports to an optimal position.
+ * Rotates a node to move ports to an optimal position according to a preprocessed graph.
  *
  * @param fixed Unprocessed node
  * @param processed Preprocessed node, laid out with no port restrictions
@@ -237,30 +246,36 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
     }
     assert(fixed.ports.length === processed.ports?.length);
 
-    const rotations = [0, 1, 2, 3];
-    const rotatedNodes = rotations.map((rotation) =>
-        rotatedNode(fixed, rotation, { makeSquare: true })
-    );
+    let bestIndex = -1;
+    const fixedRotation = fixed.koppla.skin?.options?.rotationSteps;
 
-    const distances = rotatedNodes.map((node) =>
-        totalPortDistance(node, processed)
-    );
-    let minDistance = Number.MAX_VALUE;
-    let minIndex = -1;
+    if (fixedRotation !== undefined) {
+        bestIndex = fixedRotation;
+    } else {
+        const rotations = [0, 1, 2, 3];
+        const rotatedNodes = rotations.map((rotation) =>
+            rotatedNode(fixed, rotation, { makeSquare: true })
+        );
 
-    for (let i = 0; i < distances.length; i++) {
-        const distance = distances[i];
-        if (distance < minDistance) {
-            minDistance = distance;
-            minIndex = i;
+        const distances = rotatedNodes.map((node) =>
+            totalPortDistance(node, processed)
+        );
+        let minDistance = Number.MAX_VALUE;
+
+        for (let i = 0; i < distances.length; i++) {
+            const distance = distances[i];
+            if (distance < minDistance) {
+                minDistance = distance;
+                bestIndex = i;
+            }
         }
     }
 
-    const bestNode = rotatedNode(fixed, minIndex, {
+    const bestNode = rotatedNode(fixed, bestIndex, {
         makeSquare: false,
     });
-    bestNode.koppla.rotation = (rotations[minIndex] * Math.PI) / 2;
-    if (minIndex === 1 || minIndex === 3) {
+    bestNode.koppla.rotation = (bestIndex * Math.PI) / 2;
+    if (bestIndex === 1 || bestIndex === 3) {
         [bestNode.width, bestNode.height] = [bestNode.height, bestNode.width];
     }
     return bestNode;
@@ -482,7 +497,9 @@ function renderSVG(layout: KopplaELKRoot): string {
     });
 
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-        <svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+        <svg width="${layout.width}" height="${
+        layout.height
+    }" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
         ${svgSymbols.join("")}
         ${svgWires.join("")}
         ${svgLabels.join("")}
