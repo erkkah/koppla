@@ -529,7 +529,11 @@ function makeLabel(text: string): Label {
 }
 
 function labelsFromNode(node: CompiledNode): Label[] {
-    const labels: Label[] = [makeLabel(node.ID)];
+    const labels: Label[] = [];
+
+    if (node.designator !== "gnd") {
+        labels.push(makeLabel(node.ID))
+    }
     if (node.description) {
         labels.push(makeLabel(node.description));
     }
