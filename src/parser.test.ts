@@ -30,7 +30,16 @@ describe("parse comments", () => {
 });
 
 describe("parse components", () => {
-    const parser = createParser();
+
+    function parseComponent(code: string): Definition {
+        const schematic = parse(code);
+        expect(schematic.body).toHaveLength(1);
+        const [connection] = schematic.body;
+        assert(connection.type === "Connection");
+        const {source} = connection;
+        assert(source.type === "Component");
+        return source.definition;
+    }
 
     it("parses empty components", () => {
         const components = [
@@ -43,43 +52,58 @@ describe("parse components", () => {
             "**"
         ]
         for (const component of components) {
-            parser.parse(component);
+            parse(component);
         }
     });
 
     it("fails to parse invalid component", () => {
         const invalid = "/]"
         expect(() => {
-            parser.parse(invalid);
+            parse(invalid);
         }).toThrow();
     });
 
     it("parses space-filled component", () => {
-        parser.parse("[     ]");
+        parse("[     ]");
     });
 
     it("parses designator", () => {
-        parser.parse("[R12]");
+        const component = parseComponent("[R12]");
+        expect(component.designator).toEqual({
+            designator: "R",
+            index: 12,
+        })
     })
 
-    it("parses value", () => {
-        parser.parse("|47uF]");
+    it("parses numeric value", () => {
+        const component = parseComponent("|47uF]");
+        expect(component.designator).toBeUndefined();
+        assert(component.value?.type === "NumericValue");
+        expect(component.value.prefix).toBe("u");
+        expect(component.value.unit).toBe("F");
+        expect(component.value.value).toBe("47");
+    })
+
+    it("parses symbolic value", () => {
+        const component = parseComponent(">1N4148|")
+        expect(component.designator).toBeUndefined();
+        expect(component.value?.value).toBe("1N4148");
     })
 
     it("parses designator and value", () => {
-        parser.parse("[R87: 1.2k]");
+        parse("[R87: 1.2k]");
     });
 
     it("parses part spec", () => {
-        parser.parse("*!integrator*");
+        parse("*!integrator*");
     })
 
     it("parses generic part with designator and value", () => {
-        parser.parse("*R78:19k*")
+        parse("*R78:19k*")
     });
 
     it("parses a complete thing", () => {
-        parser.parse("|C99: 4.7nF !supercap \"A really special cap\"|")
+        parse("|C99: 4.7nF !supercap \"A really special cap\"|")
     });
 });
 
@@ -118,6 +142,12 @@ describe("parse connections", () => {
 
     it("parses port to component", () => {
         parser.parse("<in> - [R1]");
+    });
+
+    it("fails to parse connections without spaces", () => {
+        expect(() => {
+            parse("<in>-[R1]");
+        }).toThrow();
     });
 
     it("parses port to component terminal", () => {
@@ -232,12 +262,11 @@ describe("validate parsed structure", () => {
     it("components and parts", () => {
         const code = `
         [R1] - [R2]
-        #[R1]a - :GND:
         
         R1: 1k
         `;
         const schematic = parse(code);
-        expect(schematic.body).toHaveLength(2);
-        
+        expect(schematic.body).toHaveLength(2);  
     })
 });
+

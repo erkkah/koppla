@@ -178,14 +178,17 @@ export function createParser(): Parser {
         };
     }
     Open "component start" = "[" / "|" / ">" / "(" / "$" / "*" / "/"
-    Close "component end" = "]" / "|" / "]" / ")" / "$" / "*" / "/"
+    Close "component end" = "]" / "|" / "<" / ")" / "$" / "*" / "/"
     PartDefinition =
-        designatorAndValue: DesignatorAndValue
+        designator: Designator
+        WSC
+        value: Value?
         WSC
         symbolAndDescription: SymbolAndDescription {
             return {
                 type: "Definition",
-                ...designatorAndValue,
+                designator,
+                value,
                 ...symbolAndDescription
             };            
         }
@@ -237,14 +240,14 @@ export function createParser(): Parser {
             index: 0,
         }
     })
-    Value "value" = (value: Decimal prefix: Prefix? unit: Unit? {
+    Value "value" = (value: Decimal prefix: Prefix? unit: Unit? !AlphaNumeric {
         return {
             type: "NumericValue",
             value,
             prefix,
             unit
         };
-    }) / (value: Identifier {
+    }) / (value: AlphaNumeric {
         return {
             type: "SymbolicValue",
             value
@@ -258,7 +261,9 @@ export function createParser(): Parser {
     Character = [a-z]i
     QuotedString = '"' chars:StringCharacter* '"' {return chars && chars.join("");}
     StringCharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
-    Integer = $[0-9]+
+    Integer = $Numeric+
+    Numeric = [0-9]
+    AlphaNumeric = $(Character / Numeric)+
     Decimal = $[0-9.+-]+
     Prefix = "p" / "n" / "u" / "m" / "k" / "M" / "G"
     Unit "unit" = Alpha
