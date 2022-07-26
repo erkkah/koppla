@@ -14,6 +14,8 @@ declare type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> & Pick<Required
 };
 export declare function render(schematic: CompiledSchematic, symbols: SymbolLibrary, skin: Skin, options?: {
     optimize: boolean;
+    fontFile?: string;
+    fontSize: number;
 }): Promise<string>;
 export declare function optimize(root: KopplaELKRoot, preprocessed: KopplaELKRoot): KopplaELKRoot;
 export {};

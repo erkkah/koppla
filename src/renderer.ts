@@ -10,6 +10,7 @@ import ELK, {
 const DEBUG = false;
 
 import { CompiledSchematic, CompiledNode } from "./compiler";
+import { defaultFont, LoadedFont, loadFontAsDataURL } from "./font";
 import { NumericValue, Value } from "./parser";
 import { Skin, SymbolSkin, Point } from "./skin";
 import { SymbolLibrary } from "./symbols";
@@ -25,9 +26,15 @@ export async function render(
     schematic: CompiledSchematic,
     symbols: SymbolLibrary,
     skin: Skin,
-    options: { optimize: boolean } = { optimize: true }
+    options: { optimize: boolean, fontFile?: string, fontSize: number } = { optimize: true, fontSize: 20 }
 ): Promise<string> {
     const elk = new ELK();
+
+    let font: LoadedFont = defaultFont(options.fontSize);
+
+    if (options.fontFile) {
+        font = await loadFontAsDataURL(options.fontFile, options.fontSize);
+    }
 
     const nodes: KopplaELKNode[] = schematic.nodes.map((node) => {
         const symbolInfo = symbols.lookup(node.symbol);
@@ -70,7 +77,7 @@ export async function render(
 
         return {
             id: node.ID,
-            labels: labelsFromNode(node),
+            labels: labelsFromNode(node, font),
             width,
             height,
             koppla: { node, rotation: 0 },
@@ -136,7 +143,7 @@ export async function render(
     )) as KopplaELKRoot;
 
     if (!options.optimize) {
-        return renderSVG(prePass);
+        return renderSVG(prePass, font);
     }
 
     const graphWithSkin = cloneWithSkin(graph, symbols, skin, {
@@ -153,7 +160,7 @@ export async function render(
         },
     });
 
-    return renderSVG(laidOut as KopplaELKRoot);
+    return renderSVG(laidOut as KopplaELKRoot, font);
 }
 
 function setupLabelPlacements(graph: KopplaELKRoot) {
@@ -425,7 +432,7 @@ function round(value: number | string | undefined): string {
     return String(Math.round(Number(value) * 1000) / 1000);
 }
 
-function renderSVG(layout: KopplaELKRoot): string {
+function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
     const svgSymbols = layout.children.reduce((commands, node) => {
         assert(node.x !== undefined);
         assert(node.y !== undefined);
@@ -505,10 +512,25 @@ function renderSVG(layout: KopplaELKRoot): string {
         });
     });
 
+    const fontStyle = `
+    ${font.dataURL ? `
+    @font-face {
+        font-family: "Koppla Electric";
+        font-style: normal;
+        src: url("${font.dataURL}");
+    }` : ""}
+    text {
+        font-family: "Koppla Electric", monospace;
+        font-size: ${font.height}px;
+        font-weight: normal;
+    }
+    `;
+
     return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         <svg width="${layout.width}" height="${
         layout.height
     }" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
+        <style>${fontStyle}</style>
         ${svgSymbols.join("")}
         ${svgWires.join("")}
         ${svgJunctions.join("")}
@@ -518,27 +540,26 @@ function renderSVG(layout: KopplaELKRoot): string {
 
 let labelIndex = 0;
 
-function makeLabel(text: string): Label {
+function makeLabel(text: string, fontWidth: number, fontHeight: number): Label {
     return {
         id: `LBL${labelIndex++}`,
         text,
-        // ??? Hack!
-        width: 10 * text.length,
-        height: 10,
+        width: fontWidth * text.length,
+        height: fontHeight,
     };
 }
 
-function labelsFromNode(node: CompiledNode): Label[] {
+function labelsFromNode(node: CompiledNode, font: LoadedFont): Label[] {
     const labels: Label[] = [];
 
     if (node.designator !== "gnd") {
-        labels.push(makeLabel(node.ID))
+        labels.push(makeLabel(node.ID, font.width, font.height))
     }
     if (node.description) {
-        labels.push(makeLabel(node.description));
+        labels.push(makeLabel(node.description, font.width, font.height));
     }
     if (node.value) {
-        labels.push(makeLabel(valueToString(node.value)));
+        labels.push(makeLabel(valueToString(node.value), font.width, font.height));
     }
     return labels;
 }

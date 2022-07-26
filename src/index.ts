@@ -5,37 +5,88 @@ import { compile } from "./compiler";
 import { render } from "./renderer";
 import { CoreSymbols } from "./symbols";
 import { Skin } from "./skin";
-import { join } from "path";
-import { readFile } from "fs/promises";
+import { extname, join } from "path";
+import { readFile, writeFile } from "fs/promises";
 
 const skinFile = join(__dirname, "..", "Electrical_symbols_library.svg");
 
-interface CommandLine {
+interface Options {
     input: string;
+    output: string;
+    fontFile: string;
+    fontSize: number;
 }
 
-function parseArgs(args: string[]): CommandLine {
-    if (args.length < 3) {
+function parseOption(option: string): [string, string] {
+    const matches = option.match(/^-+(\w+)(?:=(\S+))?$/);
+    if (!matches) {
+        throw new Error("Failed to parse option");
+    }
+    const name = matches[1];
+    const value = matches.length === 3 ? matches[2] : "true";
+    return [name, value];
+}
+
+function parseArgs(args: string[]): Options {
+    const files: string[] = [];
+    const options: Options = {
+        input: "",
+        fontFile: "",
+        output: "",
+        fontSize: 20,
+    };
+
+    for (const arg of args) {
+        if (arg.startsWith("-")) {
+            const [name, value] = parseOption(arg);
+            switch (name) {
+                case "font":
+                    options.fontFile = value;
+                    break;
+                case "svg":
+                    options.output = value;
+                    break;
+                default:
+                    console.log(`Unknown option ${name}`);
+                    process.exit(1);
+            }
+        } else {
+            files.push(arg);
+        }
+    }
+
+    if (files.length < 1) {
         console.log("Expected koppla file argument");
         process.exit(1);
     }
-    return {
-        input: args[2]
+
+    options.input = files[0];
+    if (options.output.length === 0) {
+        options.output = options.input.replace(
+            new RegExp(`${extname(options.input)}$`),
+            ".svg"
+        );
     }
+    return options;
 }
 
 async function main(args: string[]) {
-    const commandLine = parseArgs(args);
-    const input = await readFile(commandLine.input);
+    const options = parseArgs(args.slice(2));
+    const input = await readFile(options.input);
+
     const parsed = parse(input.toString());
 
     const symbols = new CoreSymbols();
     const compiled = compile(parsed, symbols);
-    
+
     const skin = new Skin();
     await skin.load(skinFile);
-    const rendered = await render(compiled, symbols, skin, {optimize: true});
-    console.log(rendered);
+    const rendered = await render(compiled, symbols, skin, {
+        optimize: true,
+        fontFile: options.fontFile,
+        fontSize: options.fontSize,
+    });
+    await writeFile(options.output, rendered);
 }
 
 main(process.argv)
