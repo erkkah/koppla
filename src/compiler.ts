@@ -380,12 +380,18 @@ function compilePort(schematic: CompiledSchematic, port: Port): NodeID {
 function compileDefinition(
     schematic: CompiledSchematic,
     definition: Definition,
-    fallbackType?: string
+    typeFromSymbol?: string
 ): NodeID {
     assert(definition.type === "Definition");
-    const designator = definition.designator?.designator ?? fallbackType;
+    const designator = definition.designator?.designator ?? typeFromSymbol;
+
+    if (designator === undefined) {
+        throw new Error("Designator required");
+    }
+    if (typeFromSymbol !== undefined && designator !== typeFromSymbol) {
+        throw new Error(`Mismatched component type ${designator} != ${typeFromSymbol}`);
+    }
     const index = definition.designator?.index ?? NaN;
-    assert(designator !== undefined, "Expected designator");
     return schematic.component({
         ...definition,
         designator: {

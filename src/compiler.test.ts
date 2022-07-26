@@ -21,7 +21,7 @@ describe("compiler", () => {
         expect(node.ID).toBe("R1");
     });
 
-    it("handles duplicate definition", () => {
+    it("handles duplicate definitions", () => {
         const parsed = parse("[R1:22k] - [R1 \"resistor\"]");
         const compiled = compile(parsed, symbols);
         expect(compiled.edges).toHaveLength(1);
@@ -41,5 +41,12 @@ describe("compiler", () => {
         expect(e1.target.ID).toBe("R2");
         expect(e2.source.ID).toBe("R2");
         expect(e2.target.ID).toBe("R3");
+    });
+
+    it("fails to compile mismatched symbol and designator", () => {
+        expect(() => {
+            const parsed = parse("[C1] - |R1|");
+            compile(parsed, symbols);
+        }).toThrow();
     });
 });

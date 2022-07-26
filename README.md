@@ -112,15 +112,12 @@ This whole block is a comment.
 
 ## TODO
 
-* Make symbol rotation into list of rotations (to restrict opamp symbol from pointing up or down)
-* Make it a syntax error to use the wrong designator / symbol mix
+* Add support for generic ICs, invoking terminals as needed
 * Make diodes and polarized caps work in both directions, flipping terminals as needed
 * Add schematic label / legend support
 * Add "h-flip" after rotation as possible optimization step
 * Better error handling + reporting
 * Add option to render ohm symbol
 * Make component label / value drawing optional
-* Optimize svg output
 * Add watching build server
-
-https://en.wikipedia.org/wiki/Reference_designator#Other_designators
+* Add compiler line info
