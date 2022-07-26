@@ -91,7 +91,7 @@ export class CompiledSchematic {
             resolved = false;
         }
 
-        const ID = `${designator.designator}${designator.index}`;
+        const ID = `${designator.designator}${designator.index || ""}`;
         const nodeID: NodeID = {
             ID,
             resolved,
