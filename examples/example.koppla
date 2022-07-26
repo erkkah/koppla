@@ -1,0 +1,3 @@
+# An example schematic
+<in> - [R1:10k] - |4.7uF| - <gnd>
+[R1] - <out>

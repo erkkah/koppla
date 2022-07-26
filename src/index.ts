@@ -5,10 +5,9 @@ import { compile } from "./compiler";
 import { render } from "./renderer";
 import { CoreSymbols } from "./symbols";
 import { Skin } from "./skin";
-import { extname, join } from "path";
+import { extname } from "path";
 import { readFile, writeFile } from "fs/promises";
-
-const skinFile = join(__dirname, "..", "Electrical_symbols_library.svg");
+import { findResource } from "./resources";
 
 interface Options {
     input: string;
@@ -72,15 +71,21 @@ function parseArgs(args: string[]): Options {
 
 async function main(args: string[]) {
     const options = parseArgs(args.slice(2));
-    const input = await readFile(options.input);
 
-    const parsed = parse(input.toString());
-
-    const symbols = new CoreSymbols();
-    const compiled = compile(parsed, symbols);
+    if (options.fontFile === "") {
+        options.fontFile = findResource("fonts/inconsolata.regular.ttf");
+    }
 
     const skin = new Skin();
+    const skinFile = findResource("symbols/library.svg");
     await skin.load(skinFile);
+
+    const symbols = new CoreSymbols();
+
+    const input = await readFile(options.input);
+    const parsed = parse(input.toString());
+    const compiled = compile(parsed, symbols);
+
     const rendered = await render(compiled, symbols, skin, {
         optimize: true,
         fontFile: options.fontFile,
