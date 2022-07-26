@@ -454,12 +454,11 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
             x: targetReference.x - sourceReference.x,
             y: targetReference.y - sourceReference.y,
         };
-        const figure = `<g transform="
-            translate(${round(translation.x)}, ${round(translation.y)})
-            rotate(${rotation},${sourceReference.x},${sourceReference.y})
-        ">
-            ${symbol?.svgData}
-        </g>`;
+        const transforms = [`translate(${round(translation.x)}, ${round(translation.y)})`];
+        if (rotation !== 0) {
+            transforms.push(`rotate(${rotation},${sourceReference.x},${sourceReference.y})`);
+        }
+        const figure = `<g transform="${transforms.join("")}">${symbol?.svgData}</g>`;
         commands.push(figure);
         if (DEBUG) {
             commands.push(
@@ -481,9 +480,7 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
             return lines;
         }, [] as string[]);
 
-        const style =
-            "fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1";
-        const wire = `<path d="${lines.join(" ")}" style="${style}"/>`;
+        const wire = `<path d="${lines.join(" ")}" class="wire"/>`;
         commands.push(wire);
         return commands;
     }, [] as string[]);
@@ -493,7 +490,7 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
         return edge.junctionPoints?.map((point) => {
             const x = round(Number(point.x));
             const y = round(Number(point.y));
-            return `<circle cx="${x}" cy="${y}" r="5" style="fill:#000000"/>`;
+            return `<circle cx="${x}" cy="${y}" r="5" style="fill:#000"/>`;
         });
     });
 
@@ -503,7 +500,7 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
             const x = round(Number(node.x) + Number(label.x));
             const y = round(Number(node.y) + Number(label.y));
             return (
-                `<text x="${x}" y="${y}" alignment-baseline="hanging" style="fill:#000000;fill-opacity:1;stroke:none">${label.text}</text>` +
+                `<text x="${x}" y="${y}" alignment-baseline="hanging">${label.text}</text>` +
                 (DEBUG
                     ? `<rect x="${x}" y="${y}" width="${label.width}" height="${label.height}" style="fill:none;stroke:#000000;stroke-width:1;"/>`
                     : "")
@@ -522,19 +519,37 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
         font-family: "Koppla Electric", monospace;
         font-size: ${font.height}px;
         font-weight: normal;
+        fill: #000;
+        fill-opacity: 1;
+        stroke: none";
+    }
+    .wire {
+        fill:none;
+        stroke:#000;
+        stroke-width:3.5;
+        stroke-linecap:round;
+        stroke-linejoin:miter;
+        stroke-miterlimit:4;
+        stroke-dasharray:none;
+        stroke-opacity:1;
     }
     `;
 
-    return `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+    return minify(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>
         <svg width="${layout.width}" height="${
         layout.height
     }" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:svg="http://www.w3.org/2000/svg">
         <style>${fontStyle}</style>
-        ${svgSymbols.join("")}
-        ${svgWires.join("")}
-        ${svgJunctions.join("")}
-        ${svgLabels.join("")}
-        </svg>`;
+        ${svgSymbols.join("\n")}
+        ${svgWires.join("\n")}
+        ${svgJunctions.join("\n")}
+        ${svgLabels.join("\n")}
+        </svg>`);
+}
+
+function minify(code: string): string {
+    const mini =  code.replace(/^\s+/gm, "");
+    return mini;
 }
 
 let labelIndex = 0;
