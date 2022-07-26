@@ -51,19 +51,35 @@
         "ID": "mosfet_p_e",
         "terminals": ["g", "s", "d"]
     },
-    "in": {
+    "OPAMP": {
+        "ID": "opamp",
+        "terminals": ["+", "-", "out"] 
+    },
+    "POPAMP": {
+        "ID": "opamp_power",
+        "terminals": ["+", "-", "out", "v+", "v-"]
+    },
+    "IN": {
         "ID": "input",
         "terminals": ["i"]
     },
-    "out": {
+    "OUT": {
         "ID": "output",
         "terminals": ["o"]
     },
-    "v": {
+    "V": {
         "ID": "voltage",
         "terminals": ["v"]
     },
-    "gnd": {
+    "PV": {
+        "ID": "voltage",
+        "terminals": ["v"]
+    },
+    "NV": {
+        "ID": "voltage_negative",
+        "terminals": ["v"]
+    },
+    "GND": {
         "ID": "ground",
         "terminals": ["g"]
     }

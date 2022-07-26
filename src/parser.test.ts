@@ -157,6 +157,10 @@ describe("parse connections", () => {
         parser.parse("<in> - e(Q1)");
     });
 
+    it("parses connection to multicharacter terminal", () => {
+        parser.parse("<in> - v+(U1)")
+    });
+
     it("parses multi component connection", () => {        
         parser.parse("<in> - [ ] - >| - e(Q1)");
     });

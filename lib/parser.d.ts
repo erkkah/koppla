@@ -30,6 +30,7 @@ export interface Port {
     type: "Port";
     kind: "in" | "out" | "gnd" | "v";
     specifier?: string;
+    symbol?: string;
 }
 export declare type Node = Component | Port;
 interface Connection {
@@ -48,5 +49,5 @@ export interface Schematic {
     body: Statement[];
 }
 export declare function createParser(): Parser;
-export declare function parse(source: string): Schematic;
+export declare function parse(source: string, fileName?: string): Schematic;
 export {};

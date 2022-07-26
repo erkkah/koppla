@@ -83,7 +83,7 @@ async function main(args: string[]) {
     const symbols = new CoreSymbols();
 
     const input = await readFile(options.input);
-    const parsed = parse(input.toString());
+    const parsed = parse(input.toString(), options.input);
     const compiled = compile(parsed, symbols);
 
     const rendered = await render(compiled, symbols, skin, {

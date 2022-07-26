@@ -36,6 +36,7 @@ export interface Port {
     type: "Port";
     kind: "in" | "out" | "gnd" | "v";
     specifier?: string;
+    symbol?: string;
 }
 
 export type Node = Component | Port;
@@ -154,18 +155,19 @@ export function createParser(): Parser {
     Part = definition:PartDefinition {
         return definition;
     }
-    Port "port" = "<" kind:PortKind spec:PortSpecifier? ">" {
+    Port "port" = "<" kind:PortKind spec:PortSpecifier? symbol:Symbol? ">" {
         return {
             type: "Port",
             kind: kind,
-            specifier: spec
+            specifier: spec,
+            symbol
         };
     }
     PortSpecifier = ":" spec:AlphaNumeric {
         return spec;
     }
     Wire = "-"
-    Terminal "terminal" = Character / [+-]
+    Terminal "terminal" = $(Character / [+-])+
     Component = open:Open WSC definition:Definition? WSC close:Close {
         if (!validComponentDelimiters(open, close)) {
             error("Invalid component");
@@ -249,7 +251,7 @@ export function createParser(): Parser {
         };
     })
     PortKind "port kind" = kind:("GND"i / "IN"i / "OUT"i / "V"i) {
-        return kind.toLowerCase();
+        return kind.toUpperCase();
     }
     Identifier "identifier" = $(Alpha (Integer Alpha?)*)
     Description "description" = QuotedString
@@ -289,11 +291,11 @@ interface Formatter {
     format(sources: SourceText[]): string;
 }
 
-export function parse(source: string): Schematic {
+export function parse(source: string, fileName?: string): Schematic {
     const parser = createParser();
 
     try {
-        const parsed = parser.parse(source);
+        const parsed = parser.parse(source, { grammarSource: fileName });
         return parsed as Schematic;
     } catch (err) {
         if (err instanceof parser.SyntaxError) {

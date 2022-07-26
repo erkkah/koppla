@@ -27,6 +27,6 @@ export class CoreSymbols implements SymbolLibrary {
     }
 
     lookup(symbol: string): SymbolInfo {
-        return this.symbolInfo[symbol];
+        return this.symbolInfo[symbol.toUpperCase()];
     }
 }

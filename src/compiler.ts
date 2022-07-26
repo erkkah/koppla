@@ -17,8 +17,9 @@ interface NodeID {
 }
 
 interface CompiledPort {
-    kind: string;
     ID: NodeID;
+    kind: string;
+    symbol?: string;
 }
 
 type CompiledDefinition = Pick<Definition, "description" | "symbol" | "value"> &
@@ -50,7 +51,7 @@ export class CompiledSchematic {
         const portNodes: CompiledNode[] = this.ports.map((port) => ({
             ID: port.ID.ID,
             designator: port.kind,
-            symbol: port.kind,
+            symbol: port.symbol ?? port.kind,
         }));
 
         const componentNodes: CompiledNode[] = this.components.map(
@@ -130,6 +131,7 @@ export class CompiledSchematic {
         if (!found) {
             this.ports.push({
                 kind: port.kind,
+                symbol: port.symbol,
                 ID: nodeID,
             });
         }
@@ -219,6 +221,14 @@ export class CompiledSchematic {
             assert(targetSymbol.terminals.length >= 1);
             const targetTerminal =
                 connection.targetTerminal ?? targetSymbol.terminals[0];
+
+            if (!(sourceSymbol.terminals.includes(sourceTerminal))) {
+                throw new Error(`Terminal ${sourceTerminal} not found in symbol ${sourceSymbol.ID}`);
+            }
+
+            if (!(targetSymbol.terminals.includes(targetTerminal))) {
+                throw new Error(`Terminal ${targetTerminal} not found in symbol ${targetSymbol.ID}`);
+            }
 
             connection.sourceTerminal = sourceTerminal;
             connection.targetTerminal = targetTerminal;

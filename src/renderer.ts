@@ -38,6 +38,9 @@ export async function render(
 
     const nodes: KopplaELKNode[] = schematic.nodes.map((node) => {
         const symbolInfo = symbols.lookup(node.symbol);
+        if (symbolInfo === undefined) {
+            throw new Error(`Symbol "${node.symbol}" not found`);
+        }
         const symbolSkin = skin.findSymbol(symbolInfo.ID);
         if (symbolSkin === undefined) {
             throw new Error(`Symbol "${symbolInfo.ID}" not found in skin`);
@@ -66,13 +69,9 @@ export async function render(
         const height = symbolSkin.size.y;
 
         let layoutOptions: Record<string, unknown> = {};
-        if (node.designator === "gnd") {
+        if (node.designator === "GND") {
             layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
                 "LAST";
-        }
-        if (node.designator === "v") {
-            layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
-                "FIRST";
         }
 
         return {
@@ -194,7 +193,7 @@ function setupLabelPlacements(graph: KopplaELKRoot) {
             }
         }
 
-        let placement = "OUTSIDE";
+        let placement = "OUTSIDE H_LEFT V_TOP";
 
         const placements: Record<Edge, string> = {
             "N": "OUTSIDE H_CENTER V_TOP",
@@ -552,7 +551,7 @@ function makeLabel(text: string, fontWidth: number, fontHeight: number): Label {
 function labelsFromNode(node: CompiledNode, font: LoadedFont): Label[] {
     const labels: Label[] = [];
 
-    if (node.designator !== "gnd") {
+    if (node.designator !== "GND") {
         labels.push(makeLabel(node.ID, font.width, font.height))
     }
     if (node.description) {
