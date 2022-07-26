@@ -1,3 +1,4 @@
+import { StyleCache } from "./css";
 interface XMLNode extends Record<string, unknown> {
     "@attrs": Record<string, string | undefined>;
 }
@@ -34,9 +35,6 @@ interface SVGNode extends XMLNode {
     circle?: SVGCircle[];
     rect?: SVGRect[];
 }
-interface ParsedSVG {
-    svg: SVGNode;
-}
 export interface Point {
     x: number;
     y: number;
@@ -56,8 +54,9 @@ export declare class SymbolSkin {
     get svgData(): string;
 }
 export declare class Skin {
-    parsed: ParsedSVG | undefined;
-    cache: Record<string, SymbolSkin | undefined>;
+    private parsed;
+    private cache;
+    styleCache: StyleCache;
     load(skinFile: string): Promise<void>;
     findSymbol(symbol: string): SymbolSkin | undefined;
 }

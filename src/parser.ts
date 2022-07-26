@@ -1,4 +1,4 @@
-import { generate, Parser, SourceText } from "peggy";
+import { generate, parser, Parser } from "peggy";
 
 export interface NumericValue {
     type: "NumericValue";
@@ -53,7 +53,15 @@ export interface ConnectionStatement {
     connections: Connection[];
 }
 
-export type Statement = ConnectionStatement | Definition;
+export interface Settings {
+    type: "Settings";
+    settings: Array<{
+        key: string;
+        value: string;
+    }>;
+}
+
+export type Statement = ConnectionStatement | Definition | Settings;
 
 export interface Schematic {
     type: "Schematic";
@@ -119,7 +127,7 @@ export function createParser(): Parser {
         return buildList(head, tail, 1);
     }
 
-    Element = Connection / Part
+    Element = Connection / Part / Settings
 
     WSC = (WhiteSpace / Comment)*
 
@@ -154,6 +162,18 @@ export function createParser(): Parser {
         }
     Part = definition:PartDefinition {
         return definition;
+    }
+    Settings = "{" settings:Setting* WSC "}" {
+        return {
+            type: "Settings",
+            settings,
+        };
+    }
+    Setting = WSC key:AlphaNumeric WSC ":" WSC value:(QuotedString / Decimal / Integer / Boolean) WSC ";" {
+        return {
+            key,
+            value,
+        };
     }
     Port "port" = "<" kind:PortKind spec:PortSpecifier? symbol:Symbol? ">" {
         return {
@@ -256,25 +276,26 @@ export function createParser(): Parser {
     Identifier "identifier" = $(Alpha (Integer Alpha?)*)
     Description "description" = QuotedString
     
-    Space "white space" = [ \\t\\n]+
-    Alpha = $Character+
-    Character = [a-z]i
-    QuotedString = '"' chars:StringCharacter* '"' {return chars && chars.join("");}
-    StringCharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
-    Integer = $Numeric+
-    Numeric = [0-9]
-    AlphaNumeric = $(Character / Numeric / Sign)+
-    Decimal = $(Sign?[0-9]+[.]?[0-9]*)
-    Sign = "+" / "-"
     Prefix = "p" / "n" / "u" / "m" / "k" / "M" / "G"
     Unit "unit" = Alpha
+    Space "white space" = [ \\t\\n]+
+    Alpha = $Character+
+    QuotedString = '"' chars:StringCharacter* '"' {return chars && chars.join("");}
+    Integer "integer" = $Numeric+
+    Decimal "decimal" = $(Sign?[0-9]+[.]?[0-9]*)
+    Boolean "boolean" = "true" / "false"
+    AlphaNumeric = $(Character / Numeric / Sign / ".")+
+    Character = [a-z]i
+    StringCharacter = char:[^\\\\"] {return char;} / "\\\\" '"' {return '"';}
+    Numeric = [0-9]
+    Sign = "+" / "-"
 `;
     try {
         const parser = generate(grammar, { trace: false });
         return parser;
     } catch (err) {
         if ("format" in (err as Record<string, unknown>)) {
-            const error = err as Formatter;
+            const error = err as parser.SyntaxError;
             throw error.format([
                 {
                     source: undefined,
@@ -285,10 +306,6 @@ export function createParser(): Parser {
             throw err;
         }
     }
-}
-
-interface Formatter {
-    format(sources: SourceText[]): string;
 }
 
 export function parse(source: string, fileName?: string): Schematic {

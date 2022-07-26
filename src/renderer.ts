@@ -26,7 +26,10 @@ export async function render(
     schematic: CompiledSchematic,
     symbols: SymbolLibrary,
     skin: Skin,
-    options: { optimize: boolean, fontFile?: string, fontSize: number } = { optimize: true, fontSize: 20 }
+    options: { optimize: boolean; fontFile?: string; fontSize: number } = {
+        optimize: true,
+        fontSize: 20,
+    }
 ): Promise<string> {
     const elk = new ELK();
 
@@ -69,10 +72,12 @@ export async function render(
         const height = symbolSkin.size.y;
 
         let layoutOptions: Record<string, unknown> = {};
+        /*
         if (node.designator === "GND") {
             layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
                 "LAST";
         }
+        */
 
         return {
             id: node.ID,
@@ -97,16 +102,27 @@ export async function render(
         edges,
     };
 
+    const layoutOptionsFromSettings = Object.entries(schematic.settings)
+        .filter(([key]) => key.startsWith("elk."))
+        .reduce((settings, setting) => {
+            const [key, value] = setting;
+            settings[key] = value;
+            return settings;
+        }, {} as Record<string, string>);
+
     // https://www.eclipse.org/elk/reference/algorithms/org-eclipse-elk-layered.html
     const layoutOptions: LayoutOptions = {
-        "org.eclipse.elk.algorithm": "layered",
-        "org.eclipse.elk.direction": "DOWN",
-        "org.eclipse.elk.edgeRouting": "ORTHOGONAL",
-        "org.eclipse.elk.spacing.labelLabel": 3,
-        "org.eclipse.elk.layered.layering.strategy": "LONGEST_PATH",
-        "org.eclipse.elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
-        "org.eclipse.elk.layered.compaction.postCompaction.strategy": "LEFT",
-        "org.eclipse.elk.edge.thickness": 3.5,
+        "elk.algorithm": "layered",
+        "elk.direction": "DOWN",
+        "elk.edgeRouting": "ORTHOGONAL",
+        "elk.spacing.labelLabel": 3,
+        //"elk.layered.layering.strategy": "NETWORK_SIMPLEX",
+        "elk.layered.layering.strategy": "LONGEST_PATH",
+        "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
+        //"elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+        "elk.layered.compaction.postCompaction.strategy": "LEFT",
+        "elk.edge.thickness": 3.5,
+        ...layoutOptionsFromSettings,
     };
 
     /*
@@ -142,7 +158,7 @@ export async function render(
     )) as KopplaELKRoot;
 
     if (!options.optimize) {
-        return renderSVG(prePass, font);
+        return renderSVG(prePass, font, skin);
     }
 
     const graphWithSkin = cloneWithSkin(graph, symbols, skin, {
@@ -159,12 +175,12 @@ export async function render(
         },
     });
 
-    return renderSVG(laidOut as KopplaELKRoot, font);
+    return renderSVG(laidOut as KopplaELKRoot, font, skin);
 }
 
 function setupLabelPlacements(graph: KopplaELKRoot) {
     type Edge = "N" | "S" | "E" | "W";
-    
+
     for (const child of graph.children) {
         assert(child.width !== undefined);
         assert(child.height !== undefined);
@@ -196,10 +212,10 @@ function setupLabelPlacements(graph: KopplaELKRoot) {
         let placement = "OUTSIDE H_LEFT V_TOP";
 
         const placements: Record<Edge, string> = {
-            "N": "OUTSIDE H_CENTER V_TOP",
-            "S": "OUTSIDE H_CENTER V_BOTTOM",
-            "E": "OUTSIDE H_RIGHT V_CENTER",
-            "W": "OUTSIDE H_LEFT V_CENTER",
+            N: "OUTSIDE H_CENTER V_TOP",
+            S: "OUTSIDE H_CENTER V_BOTTOM",
+            E: "OUTSIDE H_RIGHT V_CENTER",
+            W: "OUTSIDE H_LEFT V_CENTER",
         };
 
         const edgePriorities: Edge[] = ["W", "E", "N", "S"];
@@ -431,7 +447,11 @@ function round(value: number | string | undefined): string {
     return String(Math.round(Number(value) * 1000) / 1000);
 }
 
-function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
+function renderSVG(
+    layout: KopplaELKRoot,
+    font: LoadedFont,
+    skin: Skin
+): string {
     const svgSymbols = layout.children.reduce((commands, node) => {
         assert(node.x !== undefined);
         assert(node.y !== undefined);
@@ -454,11 +474,17 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
             x: targetReference.x - sourceReference.x,
             y: targetReference.y - sourceReference.y,
         };
-        const transforms = [`translate(${round(translation.x)}, ${round(translation.y)})`];
+        const transforms = [
+            `translate(${round(translation.x)}, ${round(translation.y)})`,
+        ];
         if (rotation !== 0) {
-            transforms.push(`rotate(${rotation},${sourceReference.x},${sourceReference.y})`);
+            transforms.push(
+                `rotate(${rotation},${sourceReference.x},${sourceReference.y})`
+            );
         }
-        const figure = `<g transform="${transforms.join("")}">${symbol?.svgData}</g>`;
+        const figure = `<g transform="${transforms.join("")}">${
+            symbol?.svgData
+        }</g>`;
         commands.push(figure);
         if (DEBUG) {
             commands.push(
@@ -485,7 +511,6 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
         return commands;
     }, [] as string[]);
 
-
     const svgJunctions = layout.edges.flatMap((edge) => {
         return edge.junctionPoints?.map((point) => {
             const x = round(Number(point.x));
@@ -509,12 +534,16 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
     });
 
     const fontStyle = `
-    ${font.dataURL ? `
+    ${
+        font.dataURL
+            ? `
     @font-face {
         font-family: "Koppla Electric";
         font-style: normal;
         src: url("${font.dataURL}");
-    }` : ""}
+    }`
+            : ""
+    }
     text {
         font-family: "Koppla Electric", monospace;
         font-size: ${font.height}px;
@@ -533,6 +562,7 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
         stroke-dasharray:none;
         stroke-opacity:1;
     }
+    ${skin.styleCache.CSS}
     `;
 
     return minify(`<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -548,7 +578,7 @@ function renderSVG(layout: KopplaELKRoot, font: LoadedFont): string {
 }
 
 function minify(code: string): string {
-    const mini =  code.replace(/^\s+/gm, "");
+    const mini = code.replace(/^\s+/gm, "");
     return mini;
 }
 
@@ -567,13 +597,15 @@ function labelsFromNode(node: CompiledNode, font: LoadedFont): Label[] {
     const labels: Label[] = [];
 
     if (node.designator !== "GND") {
-        labels.push(makeLabel(node.ID, font.width, font.height))
+        labels.push(makeLabel(node.ID, font.width, font.height));
     }
     if (node.description) {
         labels.push(makeLabel(node.description, font.width, font.height));
     }
     if (node.value) {
-        labels.push(makeLabel(valueToString(node.value), font.width, font.height));
+        labels.push(
+            makeLabel(valueToString(node.value), font.width, font.height)
+        );
     }
     return labels;
 }

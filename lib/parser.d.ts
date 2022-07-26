@@ -43,7 +43,14 @@ export interface ConnectionStatement {
     source: Node;
     connections: Connection[];
 }
-export declare type Statement = ConnectionStatement | Definition;
+export interface Settings {
+    type: "Settings";
+    settings: Array<{
+        key: string;
+        value: string;
+    }>;
+}
+export declare type Statement = ConnectionStatement | Definition | Settings;
 export interface Schematic {
     type: "Schematic";
     body: Statement[];

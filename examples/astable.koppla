@@ -18,3 +18,7 @@
 
 (Q1)b - |C1| - c(Q2)
 (Q2)b - |C2| - c(Q1)
+
+{
+    elk.layered.layering.strategy: "NETWORK_SIMPLEX";
+}

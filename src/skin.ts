@@ -2,6 +2,7 @@ import assert from "assert";
 import { readFile } from "fs/promises";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { encodeSVGPath, SVGPathData } from "svg-pathdata";
+import { StyleCache } from "./css";
 type SVGCommand = SVGPathData["commands"][0];
 
 interface XMLNode extends Record<string, unknown> {
@@ -80,8 +81,9 @@ export class SymbolSkin {
 }
 
 export class Skin {
-    parsed: ParsedSVG | undefined;
-    cache: Record<string, SymbolSkin | undefined> = {};
+    private parsed: ParsedSVG | undefined;
+    private cache: Record<string, SymbolSkin | undefined> = {};
+    styleCache = new StyleCache("kpl");
 
     async load(skinFile: string) {
         const parser = new XMLParser({
@@ -116,7 +118,7 @@ export class Skin {
 
         if (found !== undefined) {
             try {
-                result = makeSymbolSkin(found);
+                result = makeSymbolSkin(found, this.styleCache);
             } catch (err) {
                 throw new Error(`Failed to load symbol "${symbol}": ${err}`);
             }
@@ -127,13 +129,32 @@ export class Skin {
     }
 }
 
-function makeSymbolSkin(svg: SVGNode): SymbolSkin {
+function makeSymbolSkin(svg: SVGNode, styleCache: StyleCache): SymbolSkin {
     const initialBounds = getSVGBounds(svg);
     const rotation = extractRotation(svg);
     const translated = translateAndStripSVG(svg, initialBounds);
     const bounds = getSVGBounds(translated);
     const terminals = extractTerminals(translated, bounds.max);
+    stylesToClass(translated, styleCache);
     return new SymbolSkin(translated, bounds.max, terminals, { rotationSteps: rotation });
+}
+
+function stylesToClass(svg: SVGNode, styleCache: StyleCache) {
+    const style = pluckAttribute(svg, "style");
+    if (style !== undefined) {
+        svg["@attrs"].class = styleCache.styleToClass(style);
+    }
+
+    const convert = (svgs?: SVGNode[]) => {
+        for (const s of svgs ?? []) {
+            stylesToClass(s, styleCache);
+        }
+    };
+
+    convert(svg.circle);
+    convert(svg.path);
+    convert(svg.rect);
+    convert(svg.g);    
 }
 
 function getPathEnd(commands: SVGCommand[]): Point {

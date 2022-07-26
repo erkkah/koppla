@@ -8,6 +8,7 @@ import {
     Port,
     Node,
     Value,
+    Settings,
 } from "./parser";
 import { SymbolLibrary } from "./symbols";
 
@@ -44,6 +45,7 @@ export class CompiledSchematic {
     private ports: CompiledPort[] = [];
     private components: Array<CompiledDefinition & { ID: NodeID }> = [];
     private connections: CompiledConnection[] = [];
+    readonly settings: Record<string, string> = {};
     private unresolvedIndex = -1;
     private resolved = false;
 
@@ -152,6 +154,12 @@ export class CompiledSchematic {
             sourceTerminal,
             targetTerminal,
         });
+    }
+
+    settingsList(settings: Settings["settings"]) {
+        for (const setting of settings) {
+            this.settings[setting.key] = setting.value;
+        }
     }
 
     resolve(symbols: SymbolLibrary) {
@@ -266,6 +274,9 @@ function compileStatement(schematic: CompiledSchematic, statement: Statement) {
             break;
         case "Definition":
             compileDefinition(schematic, statement);
+            break;
+        case "Settings":
+            compileSettings(schematic, statement);
             break;
         default:
             assert(false, "Unhandled statement");
@@ -382,4 +393,9 @@ function compileDefinition(
             index,
         },
     });
+}
+
+function compileSettings(schematic: CompiledSchematic, settings: Settings) {
+    assert(settings.type === "Settings");
+    schematic.settingsList(settings.settings);
 }
