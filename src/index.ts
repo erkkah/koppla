@@ -73,7 +73,7 @@ async function main(args: string[]) {
     const options = parseArgs(args.slice(2));
 
     if (options.fontFile === "") {
-        options.fontFile = findResource("fonts/inconsolata.regular.ttf");
+        options.fontFile = findResource("fonts/inconsolata.regular.woff");
     }
 
     const skin = new Skin();

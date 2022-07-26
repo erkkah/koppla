@@ -1,5 +1,4 @@
 # Font
 
-The default font used in Koppla is [Inconsolata Regular](https://www.fontsquirrel.com/fonts/Inconsolata), released under the SIL Open Font License.
-
-Shout out to [Raph Levien](https://www.levien.com/type/myfonts/).
+The default font used in Koppla is [Inconsolata Regular](https://github.com/cyrealtype/Inconsolata), released under the SIL Open Font License.
+Copyright 2006 The Inconsolata Project Authors.
