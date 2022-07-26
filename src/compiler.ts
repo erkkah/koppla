@@ -31,6 +31,8 @@ interface CompiledConnection {
     target: NodeID;
     sourceTerminal?: string;
     targetTerminal?: string;
+    sourceFlipped?: boolean;
+    targetFlipped?: boolean;
 }
 
 export interface CompiledNode {
@@ -144,7 +146,9 @@ export class CompiledSchematic {
         source: NodeID,
         target: NodeID,
         sourceTerminal?: string,
-        targetTerminal?: string
+        targetTerminal?: string,
+        sourceFlipped?: boolean,
+        targetFlipped?: boolean
     ) {
         this.resolved = false;
 
@@ -153,6 +157,8 @@ export class CompiledSchematic {
             target,
             sourceTerminal,
             targetTerminal,
+            sourceFlipped,
+            targetFlipped
         });
     }
 
@@ -222,20 +228,25 @@ export class CompiledSchematic {
             const sourceTerminal =
                 connection.sourceTerminal ??
                 (sourceSymbol.terminals.length > 1
-                    ? sourceSymbol.terminals[1]
+                    ? sourceSymbol.terminals[connection.sourceFlipped ? 0 : 1]
                     : sourceSymbol.terminals[0]);
 
             const targetSymbol = nodeSymbol(connection.target.ID);
             assert(targetSymbol.terminals.length >= 1);
+            assert(!connection.targetFlipped || targetSymbol.terminals.length >= 2);
             const targetTerminal =
-                connection.targetTerminal ?? targetSymbol.terminals[0];
+                connection.targetTerminal ?? targetSymbol.terminals[connection.targetFlipped ? 1 : 0];
 
-            if (!(sourceSymbol.terminals.includes(sourceTerminal))) {
-                throw new Error(`Terminal ${sourceTerminal} not found in symbol ${sourceSymbol.ID}`);
+            if (!sourceSymbol.terminals.includes(sourceTerminal)) {
+                throw new Error(
+                    `Terminal ${sourceTerminal} not found in symbol ${sourceSymbol.ID}`
+                );
             }
 
-            if (!(targetSymbol.terminals.includes(targetTerminal))) {
-                throw new Error(`Terminal ${targetTerminal} not found in symbol ${targetSymbol.ID}`);
+            if (!targetSymbol.terminals.includes(targetTerminal)) {
+                throw new Error(
+                    `Terminal ${targetTerminal} not found in symbol ${targetSymbol.ID}`
+                );
             }
 
             connection.sourceTerminal = sourceTerminal;
@@ -290,28 +301,30 @@ function compileConnection(
     assert(connection.type === "Connection");
 
     const source = connection.source;
-    let sourceID = compileNode(schematic, source);
+    let [sourceID, sourceFlipped] = compileNode(schematic, source);
 
     for (const c of connection.connections) {
-        const targetID = compileNode(schematic, c.target);
+        const [targetID, targetFlipped] = compileNode(schematic, c.target);
         schematic.connection(
             sourceID,
             targetID,
             c.sourceTerminal,
-            c.targetTerminal
+            c.targetTerminal,
+            sourceFlipped,
+            targetFlipped,
         );
         sourceID = targetID;
     }
 }
 
-function compileNode(schematic: CompiledSchematic, node: Node): NodeID {
+function compileNode(schematic: CompiledSchematic, node: Node): [NodeID, boolean] {
     switch (node.type) {
         case "Component":
             assert(node.type === "Component");
             return compileComponent(schematic, node);
         case "Port":
             assert(node.type === "Port");
-            return compilePort(schematic, node);
+            return [compilePort(schematic, node), false];
         default:
             assert(false, "Unhandled source");
     }
@@ -320,48 +333,72 @@ function compileNode(schematic: CompiledSchematic, node: Node): NodeID {
 function compileComponent(
     schematic: CompiledSchematic,
     component: Component
-): NodeID {
+): [NodeID, boolean] {
     assert(component.type === "Component");
     const type = componentTypeFromDelimiters(component.open, component.close);
-    return compileDefinition(schematic, component.definition, type);
+    return [compileDefinition(schematic, component.definition, type), type?.flipped ?? false];
+}
+
+interface ComponentType {
+    type: string;
+    symbol?: string;
+    flipped?: boolean;
 }
 
 function componentTypeFromDelimiters(
     open: string,
     close: string
-): string | undefined {
+): ComponentType | undefined {
     switch (open) {
         case "[":
             if (close === "]") {
-                return "R";
+                return { type: "R" };
             }
             if (close === "|") {
-                return "C";
+                return { type: "C", symbol: "CPOL" };
+            }
+            if (close === "<") {
+                return { type: "D", symbol: "DTUN", flipped: true };
             }
             break;
         case "|":
             if (close === "|") {
-                return "C";
+                return { type: "C" };
+            }
+            if (close === "]") {
+                return { type: "C", symbol: "CPOL", flipped: true };
+            }
+            if (close === "<") {
+                return { type: "D", flipped: true };
             }
             break;
         case ">":
-            if (close === "|" || close === "]" || close === "/") {
-                return "D";
+            if (close === "|") {
+                return { type: "D" };
+            }
+            if (close === "]") {
+                return { type: "D", symbol: "DTUN" };
+            }
+            if (close === "/") {
+                return { type: "D", symbol: "DZEN" };
             }
             break;
         case "(":
             if (close === ")") {
-                return "Q";
+                return { type: "Q" };
             }
             break;
         case "$":
             if (close === "$") {
-                return "L";
+                return { type: "L" };
             }
             break;
         case "/":
             if (close === "/") {
-                return "U";
+                return { type: "U" };
+            }
+            if (close === "<") {
+                return { type: "D", symbol: "DZEN", flipped: true };
             }
             break;
         case "*":
@@ -380,20 +417,28 @@ function compilePort(schematic: CompiledSchematic, port: Port): NodeID {
 function compileDefinition(
     schematic: CompiledSchematic,
     definition: Definition,
-    typeFromSymbol?: string
+    typeFromSymbol?: ComponentType
 ): NodeID {
     assert(definition.type === "Definition");
-    const designator = definition.designator?.designator ?? typeFromSymbol;
+    const designator =
+        definition.designator?.designator ?? typeFromSymbol?.type;
 
     if (designator === undefined) {
         throw new Error("Designator required");
     }
-    if (typeFromSymbol !== undefined && designator !== typeFromSymbol) {
-        throw new Error(`Mismatched component type ${designator} != ${typeFromSymbol}`);
+
+    if (typeFromSymbol !== undefined && designator !== typeFromSymbol.type) {
+        throw new Error(
+            `Mismatched component type ${designator} != ${typeFromSymbol.type}`
+        );
     }
+
     const index = definition.designator?.index ?? NaN;
+    const symbol = typeFromSymbol?.symbol;
+
     return schematic.component({
         ...definition,
+        symbol: definition.symbol || symbol,
         designator: {
             designator,
             index,

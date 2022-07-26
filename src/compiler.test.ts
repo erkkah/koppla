@@ -49,4 +49,43 @@ describe("compiler", () => {
             compile(parsed, symbols);
         }).toThrow();
     });
+
+    it("handles diodes in both directions", () => {
+        const parsed = parse("|< - >|");
+        const compiled = compile(parsed, symbols);
+        expect(compiled.edges).toHaveLength(1);
+        expect(compiled.nodes).toHaveLength(2);
+        const [d1, d2] = compiled.nodes;
+        const [wire] = compiled.edges;
+
+        expect(wire.source.ID).toBe(d1.ID);
+        expect(wire.target.ID).toBe(d2.ID);
+        expect(wire.sourceTerminal).toBe("a");
+        expect(wire.targetTerminal).toBe("a");
+    });
+
+    it("handles polarized caps in both directions", () => {
+        const parsed = parse("|] - [|");
+        const compiled = compile(parsed, symbols);
+        expect(compiled.edges).toHaveLength(1);
+        expect(compiled.nodes).toHaveLength(2);
+        const [c1, c2] = compiled.nodes;
+        const [wire] = compiled.edges;
+
+        expect(wire.source.ID).toBe(c1.ID);
+        expect(wire.target.ID).toBe(c2.ID);
+        expect(wire.sourceTerminal).toBe("+");
+        expect(wire.targetTerminal).toBe("+");
+    });
+
+    it("compiles symbol overrides", () => {
+        const parsed = parse(">/ - >!D/");
+        const compiled = compile(parsed, symbols);
+        expect(compiled.edges).toHaveLength(1);
+        expect(compiled.nodes).toHaveLength(2);
+        const [d1, d2] = compiled.nodes;
+        expect(d1.symbol).toBe("DZEN");
+        expect(d2.symbol).toBe("D");
+    });
+
 });

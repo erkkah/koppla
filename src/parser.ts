@@ -68,18 +68,14 @@ export interface Schematic {
     body: Statement[];
 }
 
-function inArray(wanted: unknown, valid: string[]): boolean {
-    return valid.findIndex((x) => x === wanted) >= 0;
-}
-
 function validComponentDelimiters(start: string, end: string): boolean {
     switch (start) {
         case "[":
-            return inArray(end, ["]", "|"]);
+            return ["]", "|", "<"].includes(end);
         case "|":
-            return inArray(end, ["|", "]"]);
+            return ["|", "]", "<"].includes(end);
         case ">":
-            return inArray(end, ["|", "]", "/"]);
+            return ["|", "]", "/"].includes(end);
         case "(":
             return end === ")";
         case "$":
@@ -87,7 +83,7 @@ function validComponentDelimiters(start: string, end: string): boolean {
         case "*":
             return end === "*";
         case "/":
-            return end === "/";
+            return ["/", "<"].includes(end);
         default:
             return false;
     }
@@ -96,7 +92,6 @@ function validComponentDelimiters(start: string, end: string): boolean {
 export function createParser(): Parser {
     const grammar = `
     {{
-        ${inArray.toString()}
         ${validComponentDelimiters.toString()}
 
         function extractList(list, index) {
