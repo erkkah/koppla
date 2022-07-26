@@ -10,6 +10,8 @@ interface CompiledConnection {
     target: NodeID;
     sourceTerminal?: string;
     targetTerminal?: string;
+    sourceFlipped?: boolean;
+    targetFlipped?: boolean;
 }
 export interface CompiledNode {
     ID: string;
@@ -30,7 +32,7 @@ export declare class CompiledSchematic {
     get edges(): Required<CompiledConnection>[];
     component(definition: CompiledDefinition): NodeID;
     port(port: Port): NodeID;
-    connection(source: NodeID, target: NodeID, sourceTerminal?: string, targetTerminal?: string): void;
+    connection(source: NodeID, target: NodeID, sourceTerminal?: string, targetTerminal?: string, sourceFlipped?: boolean, targetFlipped?: boolean): void;
     settingsList(settings: Settings["settings"]): void;
     resolve(symbols: SymbolLibrary): void;
 }

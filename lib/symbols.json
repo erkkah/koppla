@@ -15,6 +15,14 @@
         "ID": "diode",
         "terminals": ["a", "c"]
     },
+    "DZEN": {
+        "ID": "diode_zener",
+        "terminals": ["a", "c"]
+    },
+    "DTUN": {
+        "ID": "diode_tunnel",
+        "terminals": ["a", "c"]
+    },
     "Q": {
         "ID": "bjt_npn",
         "terminals": ["c", "b", "e"]

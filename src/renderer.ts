@@ -72,12 +72,10 @@ export async function render(
         const height = symbolSkin.size.y;
 
         let layoutOptions: Record<string, unknown> = {};
-        /*
         if (node.designator === "GND") {
             layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
                 "LAST";
         }
-        */
 
         return {
             id: node.ID,
