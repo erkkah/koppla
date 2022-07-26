@@ -269,12 +269,11 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
     assert(fixed.ports.length === processed.ports?.length);
 
     let bestIndex = -1;
-    const fixedRotation = fixed.koppla.skin?.options?.rotationSteps;
+    const rotations = fixed.koppla.skin?.options?.rotationSteps ?? [0, 1, 2, 3];
 
-    if (fixedRotation !== undefined) {
-        bestIndex = fixedRotation;
+    if (rotations.length === 1) {
+        bestIndex = 0;
     } else {
-        const rotations = [0, 1, 2, 3];
         const rotatedNodes = rotations.map((rotation) =>
             rotatedNode(fixed, rotation, { makeSquare: true })
         );
@@ -293,11 +292,12 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
         }
     }
 
-    const bestNode = rotatedNode(fixed, bestIndex, {
+    const rotationSteps = rotations[bestIndex];
+    const bestNode = rotatedNode(fixed, rotationSteps, {
         makeSquare: false,
     });
-    bestNode.koppla.rotation = (bestIndex * Math.PI) / 2;
-    if (bestIndex === 1 || bestIndex === 3) {
+    bestNode.koppla.rotation = (rotationSteps * Math.PI) / 2;
+    if (rotationSteps === 1 || rotationSteps === 3) {
         [bestNode.width, bestNode.height] = [bestNode.height, bestNode.width];
     }
     return bestNode;

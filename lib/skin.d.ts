@@ -44,11 +44,11 @@ export declare class SymbolSkin {
     readonly size: Point;
     readonly terminals: Record<string, Point>;
     readonly options?: {
-        rotationSteps?: number | undefined;
+        rotationSteps?: number[] | undefined;
         scale?: number | undefined;
     } | undefined;
     constructor(svg: SVGNode, size: Point, terminals: Record<string, Point>, options?: {
-        rotationSteps?: number | undefined;
+        rotationSteps?: number[] | undefined;
         scale?: number | undefined;
     } | undefined);
     get svgData(): string;

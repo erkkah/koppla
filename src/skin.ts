@@ -61,7 +61,7 @@ export class SymbolSkin {
         readonly svg: SVGNode,
         readonly size: Point,
         readonly terminals: Record<string, Point>,
-        readonly options?: { rotationSteps?: number; scale?: number }
+        readonly options?: { rotationSteps?: number[]; scale?: number }
     ) {}
 
     get svgData(): string {
@@ -131,12 +131,12 @@ export class Skin {
 
 function makeSymbolSkin(svg: SVGNode, styleCache: StyleCache): SymbolSkin {
     const initialBounds = getSVGBounds(svg);
-    const rotation = extractRotation(svg);
+    const rotations = extractRotations(svg);
     const translated = translateAndStripSVG(svg, initialBounds);
     const bounds = getSVGBounds(translated);
     const terminals = extractTerminals(translated, bounds.max);
     stylesToClass(translated, styleCache);
-    return new SymbolSkin(translated, bounds.max, terminals, { rotationSteps: rotation });
+    return new SymbolSkin(translated, bounds.max, terminals, { rotationSteps: rotations });
 }
 
 function stylesToClass(svg: SVGNode, styleCache: StyleCache) {
@@ -210,16 +210,18 @@ function getPathEndpoints(path: SVGPathData) {
     };
 }
 
-function extractRotation(svg: SVGNode): number | undefined {
-    const rotationAttribute = pluckAttribute(svg, "koppla:rotation");
+function extractRotations(svg: SVGNode): number[] | undefined {
+    const rotationAttribute = pluckAttribute(svg, "koppla:rotations");
     if (rotationAttribute !== undefined) {
-        const rotation = Number(rotationAttribute);
-        if (!Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
-            throw new Error(
-                `Invalid symbol rotation ${rotation}, should be an integer in range [0,3]`
-            );
-        }
-        return rotation;
+        return rotationAttribute.split(",").map((rotationString) => {
+            const rotation = Number(rotationString.trim())
+            if (!Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
+                throw new Error(
+                    `Invalid symbol rotation ${rotation}, should be an integer in range [0,3]`
+                );
+            }
+            return rotation;
+        });
     }
     return undefined;
 }
