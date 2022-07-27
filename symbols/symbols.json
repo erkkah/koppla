@@ -11,6 +11,10 @@
         "ID": "capacitor_pol",
         "terminals": ["+", "-"]
     },
+    "L": {
+        "ID": "inductor",
+        "terminals": ["a", "b"]
+    },
     "D": {
         "ID": "diode",
         "terminals": ["a", "c"]
@@ -43,7 +47,7 @@
         "ID": "jfet_n",
         "terminals": ["g", "s", "d"]
     },
-    "PFET": {
+    "PJFET": {
         "ID": "jfet_p",
         "terminals": ["g", "s", "d"]
     },

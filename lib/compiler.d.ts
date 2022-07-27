@@ -1,10 +1,10 @@
-import { Schematic, Definition, Port, Value, Settings } from "./parser";
+import { Schematic, Definition, Port, Value, Settings, SourceLocation } from "./parser";
 import { SymbolLibrary } from "./symbols";
 interface NodeID {
     ID: string;
     resolved: boolean;
 }
-declare type CompiledDefinition = Pick<Definition, "description" | "symbol" | "value"> & Required<Pick<Definition, "designator">>;
+declare type CompiledDefinition = Pick<Definition, "description" | "symbol" | "value" | "location"> & Required<Pick<Definition, "designator">>;
 interface CompiledConnection {
     source: NodeID;
     target: NodeID;
@@ -12,6 +12,7 @@ interface CompiledConnection {
     targetTerminal?: string;
     sourceFlipped?: boolean;
     targetFlipped?: boolean;
+    location: SourceLocation;
 }
 export interface CompiledNode {
     ID: string;
@@ -19,6 +20,7 @@ export interface CompiledNode {
     symbol: string;
     description?: string;
     value?: Value;
+    location: SourceLocation;
 }
 export declare class CompiledSchematic {
     private ports;
@@ -32,7 +34,7 @@ export declare class CompiledSchematic {
     get edges(): Required<CompiledConnection>[];
     component(definition: CompiledDefinition): NodeID;
     port(port: Port): NodeID;
-    connection(source: NodeID, target: NodeID, sourceTerminal?: string, targetTerminal?: string, sourceFlipped?: boolean, targetFlipped?: boolean): void;
+    connection(connection: CompiledConnection): void;
     settingsList(settings: Settings["settings"]): void;
     resolve(symbols: SymbolLibrary): void;
 }

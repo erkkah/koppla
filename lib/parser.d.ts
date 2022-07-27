@@ -19,24 +19,28 @@ export interface Definition {
     value?: Value;
     symbol?: string;
     description?: string;
+    location: SourceLocation;
 }
 export interface Component {
     type: "Component";
     open: string;
     definition: Definition;
     close: string;
+    location: SourceLocation;
 }
 export interface Port {
     type: "Port";
     kind: "in" | "out" | "gnd" | "v";
     specifier?: string;
     symbol?: string;
+    location: SourceLocation;
 }
 export declare type Node = Component | Port;
 interface Connection {
     sourceTerminal?: string;
     target: Node;
     targetTerminal?: string;
+    location: SourceLocation;
 }
 export interface ConnectionStatement {
     type: "Connection";
@@ -49,6 +53,15 @@ export interface Settings {
         key: string;
         value: string;
     }>;
+    location: SourceLocation;
+}
+export interface SourceLocation {
+    source: string;
+    start: {
+        offset: number;
+        line: number;
+        column: number;
+    };
 }
 export declare type Statement = ConnectionStatement | Definition | Settings;
 export interface Schematic {

@@ -136,7 +136,9 @@ function makeSymbolSkin(svg: SVGNode, styleCache: StyleCache): SymbolSkin {
     const bounds = getSVGBounds(translated);
     const terminals = extractTerminals(translated, bounds.max);
     stylesToClass(translated, styleCache);
-    return new SymbolSkin(translated, bounds.max, terminals, { rotationSteps: rotations });
+    return new SymbolSkin(translated, bounds.max, terminals, {
+        rotationSteps: rotations,
+    });
 }
 
 function stylesToClass(svg: SVGNode, styleCache: StyleCache) {
@@ -154,7 +156,7 @@ function stylesToClass(svg: SVGNode, styleCache: StyleCache) {
     convert(svg.circle);
     convert(svg.path);
     convert(svg.rect);
-    convert(svg.g);    
+    convert(svg.g);
 }
 
 function getPathEnd(commands: SVGCommand[]): Point {
@@ -192,29 +194,64 @@ function getPathEnd(commands: SVGCommand[]): Point {
     }
 }
 
-function getPathEndpoints(path: SVGPathData) {
+function getPathSegmentCandidates(path: SVGPathData) {
     assert(path.commands.length >= 2);
 
     const abs = path.sanitize().toAbs();
-    const first = abs.commands[0];
 
+    const first = abs.commands[0];
     assert(first.type === SVGPathData.MOVE_TO);
 
-    const { x: lastX, y: lastY } = getPathEnd(abs.commands);
+    const { x: startX1, y: startY1 } = first;
+    const { x: startX2, y: startY2 } = getPathEnd(abs.commands.slice(0, 2));
 
-    return {
-        x1: first.x,
-        y1: first.y,
-        x2: lastX,
-        y2: lastY,
-    };
+    const { x: endX1, y: endY1 } = getPathEnd(
+        abs.commands.slice(0, abs.commands.length - 1)
+    );
+    const { x: endX2, y: endY2 } = getPathEnd(abs.commands);
+
+    interface Line {
+        x1: number;
+        y1: number;
+        x2: number;
+        y2: number;
+    }
+
+    const candidates: Line[] = [];
+
+    if (startX1 === startX2 || startY1 === startY2) {
+        // Only straight lines
+        candidates.push({
+            x1: startX1,
+            y1: startY1,
+            x2: startX2,
+            y2: startY2,
+        });
+    }
+
+    if (
+        (endX1 === endX2 || endY1 === endY2) &&
+        (startX1 !== endX1 ||
+            startY1 !== endY1 ||
+            startX2 !== endX2 ||
+            startY2 !== endY2)
+    ) {
+        candidates.push({
+            x1: endX1,
+            y1: endY1,
+            x2: endX2,
+            y2: endY2,
+        });
+    }
+
+    return candidates;
 }
 
 function extractRotations(svg: SVGNode): number[] | undefined {
     const rotationAttribute = pluckAttribute(svg, "koppla:rotations");
     if (rotationAttribute !== undefined) {
         return rotationAttribute.split(",").map((rotationString) => {
-            const rotation = Number(rotationString.trim())
+            const rotation = Number(rotationString.trim());
             if (!Number.isInteger(rotation) || rotation < 0 || rotation > 3) {
                 throw new Error(
                     `Invalid symbol rotation ${rotation}, should be an integer in range [0,3]`
@@ -237,47 +274,42 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
         }
         assert(typeof terminal === "string");
 
-        const bounds = pathData.getBounds();
-        const endPoints = getPathEndpoints(pathData);
+        const segments = getPathSegmentCandidates(pathData);
 
-        if (Math.round(bounds.minY) === 0) {
-            // top connector
-
-            const x =
-                endPoints.y1 === bounds.minY ? endPoints.x1 : endPoints.x2;
-            return {
-                [terminal]: { x, y: bounds.minY },
-            };
-        }
-        if (Math.round(bounds.maxY) === Math.round(size.y)) {
-            // bottom connector
-
-            const x =
-                endPoints.y1 === bounds.maxY ? endPoints.x1 : endPoints.x2;
-            return {
-                [terminal]: { x, y: bounds.maxY },
-            };
-        }
-        if (Math.round(bounds.minX) === 0) {
-            // left connector
-
-            const y =
-                endPoints.x1 === bounds.minX ? endPoints.y1 : endPoints.y2;
-            return {
-                [terminal]: { x: bounds.minX, y },
-            };
-        }
-        if (Math.round(bounds.maxX) === Math.round(size.x)) {
-            // right connector
-
-            const y =
-                endPoints.x1 === bounds.maxX ? endPoints.y1 : endPoints.y2;
-            return {
-                [terminal]: { x: bounds.maxX, y },
-            };
+        for (const segment of segments) {
+            if (segment.x1 === segment.x2) {
+                // vertical line
+                const minY = Math.min(segment.y1, segment.y2);
+                const maxY = Math.max(segment.y1, segment.y2);
+                if (minY === 0) {
+                    return {
+                        [terminal]: {x: segment.x1, y: 0}
+                    };
+                }
+                if (maxY === size.y) {
+                    return {
+                        [terminal]: {x: segment.x1, y: maxY}
+                    };                    
+                }
+            } else {
+                assert(segment.y1 === segment.y2);
+                // horizontal line
+                const minX = Math.min(segment.x1, segment.x2);
+                const maxX = Math.max(segment.x1, segment.x2);
+                if (minX === 0) {
+                    return {
+                        [terminal]: {x: 0, y: segment.y1}
+                    };
+                }
+                if (maxX === size.x) {
+                    return {
+                        [terminal]: {x: maxX, y: segment.y1}
+                    };                    
+                }
+            }
         }
 
-        assert(false, "Unexpected terminal position");
+        throw new Error(`Unexpected terminal bounds for terminal ${terminal}`);
     });
     return terminalPoints.reduce((map, point) => {
         return {
@@ -324,11 +356,14 @@ function translateAndStripSVG(
                 .translate(xAdjust, yAdjust)
                 .round(1e3).commands;
             const attrs = path["@attrs"];
+            const terminal = attrs["koppla:terminal"];
             path["@attrs"] = {
                 style: attrs.style,
-                "koppla:terminal": attrs["koppla:terminal"],
                 d: encodeSVGPath(zeroBased),
             };
+            if (terminal !== undefined) {
+                path["@attrs"]["koppla:terminal"] = terminal;
+            }
         }
     }
 
@@ -487,7 +522,7 @@ function findNodeWithAttribute(
 
 function findTerminalPaths(start: SVGNode): SVGPath[] {
     const paths = (start.path ?? []).filter(
-        (path) => "koppla:terminal" in path["@attrs"]
+        (path) => path["@attrs"]["koppla:terminal"] !== undefined
     );
 
     const childPaths = (start.g ?? []).flatMap<SVGPath>((node) => {

@@ -23,6 +23,7 @@ export interface Definition {
     value?: Value;
     symbol?: string;
     description?: string;
+    location: SourceLocation;
 }
 
 export interface Component {
@@ -30,6 +31,7 @@ export interface Component {
     open: string;
     definition: Definition;
     close: string;
+    location: SourceLocation;
 }
 
 export interface Port {
@@ -37,6 +39,7 @@ export interface Port {
     kind: "in" | "out" | "gnd" | "v";
     specifier?: string;
     symbol?: string;
+    location: SourceLocation;
 }
 
 export type Node = Component | Port;
@@ -45,6 +48,7 @@ interface Connection {
     sourceTerminal?: string;
     target: Node;
     targetTerminal?: string;
+    location: SourceLocation;
 }
 
 export interface ConnectionStatement {
@@ -59,6 +63,16 @@ export interface Settings {
         key: string;
         value: string;
     }>;
+    location: SourceLocation;
+}
+
+export interface SourceLocation {
+    source: string;
+    start: {
+        offset: number;
+        line: number;
+        column: number;
+    }
 }
 
 export type Statement = ConnectionStatement | Definition | Settings;
@@ -145,23 +159,24 @@ export function createParser(): Parser {
                 return {
                     sourceTerminal,
                     target,
-                    targetTerminal
+                    targetTerminal,
+                    location: location(),
                 };
             }
         )* {
             return {
                 type: "Connection",
                 source,
-                connections: connections ?? []
+                connections: connections ?? [],
+                location: location()
             };
         }
-    Part = definition:PartDefinition {
-        return definition;
-    }
+    Part "part" = PartDefinition
     Settings = "{" settings:Setting* WSC "}" {
         return {
             type: "Settings",
             settings,
+            location: location()
         };
     }
     Setting = WSC key:AlphaNumeric WSC ":" WSC value:(QuotedString / Decimal / Integer / Boolean) WSC ";" {
@@ -175,7 +190,8 @@ export function createParser(): Parser {
             type: "Port",
             kind: kind,
             specifier: spec,
-            symbol
+            symbol,
+            location: location(),
         };
     }
     PortSpecifier = ":" spec:AlphaNumeric {
@@ -191,7 +207,8 @@ export function createParser(): Parser {
             type: "Component",
             open,
             definition,
-            close
+            close,
+            location: location(),
         };
     }
     Open "component start" = "[" / "|" / ">" / "(" / "$" / "*" / "/"
@@ -206,7 +223,8 @@ export function createParser(): Parser {
                 type: "Definition",
                 designator,
                 value,
-                ...symbolAndDescription
+                ...symbolAndDescription,
+                location: location()
             };            
         }
     Definition =
@@ -217,7 +235,8 @@ export function createParser(): Parser {
             return {
                 type: "Definition",
                 ...designatorAndValue,
-                ...symbolAndDescription
+                ...symbolAndDescription,
+                location: location()
             };
         }
     DesignatorAndValue =

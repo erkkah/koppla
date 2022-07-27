@@ -86,11 +86,17 @@ async function main(args: string[]) {
     const parsed = parse(input.toString(), options.input);
     const compiled = compile(parsed, symbols);
 
-    const rendered = await render(compiled, symbols, skin, {
-        optimize: true,
-        fontFile: options.fontFile,
-        fontSize: options.fontSize,
-    });
+    let rendered: string = "";
+
+    try {
+        rendered = await render(compiled, symbols, skin, {
+            optimize: true,
+            fontFile: options.fontFile,
+            fontSize: options.fontSize,
+        });
+    } catch (err) {
+        console.log(`Rendering failed: ${err}`);
+    }
     await writeFile(options.output, rendered);
 }
 
@@ -99,5 +105,5 @@ main(process.argv)
         //
     })
     .catch((err) => {
-        console.log(err);
+        console.log(err.stack);
     });

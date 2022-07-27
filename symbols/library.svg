@@ -2,13 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="1800"
-   height="1500"
-   viewBox="0 0 1800 1500"
-   version="1.1"
-   id="svg8"
-   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
    sodipodi:docname="library.svg"
+   inkscape:version="1.2.1 (9c6d41e, 2022-07-14)"
+   id="svg8"
+   version="1.1"
+   viewBox="0 0 1800 1500"
+   height="1500"
+   width="1800"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -28,11 +28,11 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.102222"
-     inkscape:cx="332.11021"
-     inkscape:cy="926.16511"
+     inkscape:zoom="10.204444"
+     inkscape:cx="318.63568"
+     inkscape:cy="1171.8914"
      inkscape:document-units="px"
-     inkscape:current-layer="layer1"
+     inkscape:current-layer="g15841"
      showgrid="true"
      units="px"
      inkscape:snap-text-baseline="true"
@@ -43,7 +43,7 @@
      inkscape:window-maximized="1"
      inkscape:snap-center="false"
      inkscape:snap-object-midpoints="false"
-     inkscape:lockguides="false"
+     inkscape:lockguides="true"
      inkscape:snap-smooth-nodes="true"
      showguides="true"
      inkscape:snap-midpoints="false"
@@ -814,12 +814,27 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          inkscape:connector-curvature="0"
          sodipodi:nodetypes="ccc" />
     </g>
-    <path
-       inkscape:connector-curvature="0"
-       id="path4203"
-       style="fill:none;stroke:#000000;stroke-width:3.54400086;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
-       d="m 371,710.41665 h -14 c -0.0421,-16.39898 -14.02104,-16.39898 -14,0 -0.021,-16.399 -14.04182,-16.34072 -14,0 -2.6e-4,-16.45722 -14.04236,-16.45722 -14,0 2.8e-4,-16.3407 -13.97896,-16.39898 -14,0 -0.0421,-16.39898 -13.91338,-16.39898 -13.91338,0 H 273"
-       sodipodi:nodetypes="cccccccc" />
+    <g
+       id="g15841"
+       koppla:symbol="inductor">
+      <path
+         style="fill:none;stroke:#000000;stroke-width:3.544;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="M 370.65494,703.98183 H 358.17941"
+         id="path15814"
+         sodipodi:nodetypes="cc"
+         koppla:terminal="b" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:3.544;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="M 285.97766,703.98183 H 272.6706"
+         id="path15814-7"
+         sodipodi:nodetypes="cc"
+         koppla:terminal="a" />
+      <path
+         style="fill:none;stroke:#000000;stroke-width:3.544;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         d="M 360.88308,703.98183 H 357 c -0.0421,-16.39898 -14.02104,-14.39898 -14,2 -0.021,-16.399 -14.04182,-16.34072 -14,0 -2.6e-4,-16.45722 -14.04236,-16.45722 -14,0 2.8e-4,-16.3407 -13.97896,-16.39898 -14,0 -0.0421,-16.39898 -13.91338,-18.39898 -13.91338,-2 h -3.83111"
+         id="path4203"
+         sodipodi:nodetypes="cccccccc" />
+    </g>
     <g
        id="g1304"
        transform="translate(35,-35)">
@@ -1080,19 +1095,22 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          inkscape:connector-curvature="0" />
     </g>
     <g
-       id="g1251">
+       id="g1251"
+       koppla:symbol="capacitor_pol">
       <path
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="m 455,864.41665 v 14"
          id="path1509"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="+" />
       <path
          inkscape:connector-curvature="0"
          style="fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="m 455,892.41665 v 14"
          id="path1511"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="-" />
       <path
          sodipodi:nodetypes="cc"
          style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
@@ -1101,20 +1119,15 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
          inkscape:connector-curvature="0" />
       <g
          style="display:inline"
-         id="g1523"
-         transform="matrix(0,2,-2,0,638.25047,416.95999)">
+         id="g1523">
         <path
-           sodipodi:nodetypes="cc"
            id="path1519"
-           d="m 225.47833,82.875235 v 5.25"
-           style="fill:none;stroke:#000000;stroke-width:1.00000095px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0" />
+           d="M 472.5 869.917 L 462 869.917"
+           style="fill:none;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-width:2.0" />
         <path
-           sodipodi:nodetypes="cc"
            id="path1521"
-           d="m 228.10333,85.500235 h -5.25"
-           style="fill:none;stroke:#000000;stroke-width:1.00000095px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
-           inkscape:connector-curvature="0" />
+           d="M 467.25 875.167 L 467.25 864.667"
+           style="fill:none;stroke:#000000;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1;stroke-width:2.0" />
       </g>
       <rect
          ry="0"
@@ -2670,19 +2683,22 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g1581"
-       transform="translate(-77,-63)">
+       transform="translate(-77,-63)"
+       koppla:symbol="diode_zener">
       <path
          style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="m 973,262.41665 h 21"
          id="path1526"
          inkscape:connector-curvature="0"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="a" />
       <path
          style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
          d="m 1022,262.41665 h 14"
          id="path1528"
          inkscape:connector-curvature="0"
-         sodipodi:nodetypes="cc" />
+         sodipodi:nodetypes="cc"
+         koppla:terminal="c" />
       <path
          style="display:inline;fill:#000000;stroke:#000000;stroke-width:3.5;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
          d="m 1022,262.41665 -28,14 v -28 z"
@@ -2785,19 +2801,22 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g1682"
-       transform="translate(7,-63)">
+       transform="translate(7,-63)"
+       koppla:symbol="diode_tunnel">
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
          id="path1662"
          d="m 1225,262.41665 h 21"
-         style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         koppla:terminal="a" />
       <path
          sodipodi:nodetypes="cc"
          inkscape:connector-curvature="0"
          id="path1664"
          d="m 1274,262.41665 h 14"
-         style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+         style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+         koppla:terminal="c" />
       <path
          sodipodi:nodetypes="cccc"
          inkscape:connector-curvature="0"
@@ -2812,34 +2831,28 @@ mpan (&lt;https://commons.wikimedia.org/wiki/User:Wikimpan&gt;; &lt;https://mpan
     </g>
     <g
        id="g1722"
-       transform="translate(7,-63)">
+       transform="translate(7,-63)"
+       koppla:symbol="led">
       <g
-         transform="translate(504)"
          id="g1693">
         <path
-           sodipodi:nodetypes="cc"
-           inkscape:connector-curvature="0"
            id="path1684"
-           d="m 805,262.41665 h 21"
-           style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           d="M 1309 262.417 L 1330 262.417"
+           style="display:inline;fill:none;stroke:#000000;stroke-dasharray:none;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-width:3.5"
+           koppla:terminal="a" />
         <path
-           sodipodi:nodetypes="cc"
-           inkscape:connector-curvature="0"
            id="path1687"
-           d="M 854.00002,262.41665 H 868"
-           style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           d="M 1358 262.417 L 1372 262.417"
+           style="display:inline;fill:none;stroke:#000000;stroke-dasharray:none;stroke-linecap:round;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-width:3.5"
+           koppla:terminal="c" />
         <path
-           sodipodi:nodetypes="cccc"
-           inkscape:connector-curvature="0"
            id="path1689"
-           d="m 854,262.41665 -28,14 v -28 z"
-           style="display:inline;fill:#000000;stroke:#000000;stroke-width:3.5;stroke-linecap:square;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+           d="M 1358 262.417 L 1330 276.417 L 1330 248.417 Z"
+           style="display:inline;fill:#000000;stroke:#000000;stroke-dasharray:none;stroke-dashoffset:0;stroke-linecap:square;stroke-miterlimit:4;stroke-opacity:1;stroke-width:3.5" />
         <path
-           sodipodi:nodetypes="cc"
-           inkscape:connector-curvature="0"
            id="path1691"
-           d="m 854,248.41665 v 28"
-           style="display:inline;fill:none;stroke:#000000;stroke-width:3.5;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1" />
+           d="M 1358 248.417 L 1358 276.417"
+           style="display:inline;fill:none;stroke:#000000;stroke-dasharray:none;stroke-linecap:square;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-width:3.5" />
       </g>
       <path
          style="opacity:1;fill:#000000;fill-opacity:1;fill-rule:nonzero;stroke:none;stroke-width:3.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"

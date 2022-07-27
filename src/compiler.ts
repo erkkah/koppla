@@ -9,8 +9,20 @@ import {
     Node,
     Value,
     Settings,
+    SourceLocation,
 } from "./parser";
 import { SymbolLibrary } from "./symbols";
+
+class CompilationError extends Error {
+    constructor(message: string, readonly location: SourceLocation) {
+        super(message);
+        Object.setPrototypeOf(this, CompilationError.prototype);
+        this.name = "Compilation Error";
+        this.stack = `${this.message}${"\n"} at ${this.location.source}:${
+            this.location.start.line
+        }:${this.location.start.column}`;
+    }
+}
 
 interface NodeID {
     ID: string;
@@ -21,9 +33,13 @@ interface CompiledPort {
     ID: NodeID;
     kind: string;
     symbol?: string;
+    location: SourceLocation;
 }
 
-type CompiledDefinition = Pick<Definition, "description" | "symbol" | "value"> &
+type CompiledDefinition = Pick<
+    Definition,
+    "description" | "symbol" | "value" | "location"
+> &
     Required<Pick<Definition, "designator">>;
 
 interface CompiledConnection {
@@ -33,6 +49,7 @@ interface CompiledConnection {
     targetTerminal?: string;
     sourceFlipped?: boolean;
     targetFlipped?: boolean;
+    location: SourceLocation;
 }
 
 export interface CompiledNode {
@@ -41,6 +58,7 @@ export interface CompiledNode {
     symbol: string;
     description?: string;
     value?: Value;
+    location: SourceLocation;
 }
 
 export class CompiledSchematic {
@@ -56,6 +74,7 @@ export class CompiledSchematic {
             ID: port.ID.ID,
             designator: port.kind,
             symbol: port.symbol ?? port.kind,
+            location: port.location,
         }));
 
         const componentNodes: CompiledNode[] = this.components.map(
@@ -65,6 +84,7 @@ export class CompiledSchematic {
                 symbol: component.symbol ?? component.designator.designator,
                 description: component.description,
                 value: component.value,
+                location: component.location,
             })
         );
 
@@ -137,29 +157,15 @@ export class CompiledSchematic {
                 kind: port.kind,
                 symbol: port.symbol,
                 ID: nodeID,
+                location: port.location,
             });
         }
         return nodeID;
     }
 
-    connection(
-        source: NodeID,
-        target: NodeID,
-        sourceTerminal?: string,
-        targetTerminal?: string,
-        sourceFlipped?: boolean,
-        targetFlipped?: boolean
-    ) {
+    connection(connection: CompiledConnection) {
         this.resolved = false;
-
-        this.connections.push({
-            source,
-            target,
-            sourceTerminal,
-            targetTerminal,
-            sourceFlipped,
-            targetFlipped
-        });
+        this.connections.push(connection);
     }
 
     settingsList(settings: Settings["settings"]) {
@@ -223,41 +229,54 @@ export class CompiledSchematic {
         };
 
         for (const connection of this.connections) {
-            const sourceSymbol = nodeSymbol(connection.source.ID);
-            assert(sourceSymbol.terminals.length >= 1);
-            const sourceTerminal =
-                connection.sourceTerminal ??
-                (sourceSymbol.terminals.length > 1
-                    ? sourceSymbol.terminals[connection.sourceFlipped ? 0 : 1]
-                    : sourceSymbol.terminals[0]);
+            try {
+                const sourceSymbol = nodeSymbol(connection.source.ID);
+                assert(sourceSymbol.terminals.length >= 1);
+                const sourceTerminal =
+                    connection.sourceTerminal ??
+                    (sourceSymbol.terminals.length > 1
+                        ? sourceSymbol.terminals[
+                              connection.sourceFlipped ? 0 : 1
+                          ]
+                        : sourceSymbol.terminals[0]);
 
-            const targetSymbol = nodeSymbol(connection.target.ID);
-            assert(targetSymbol.terminals.length >= 1);
-            assert(!connection.targetFlipped || targetSymbol.terminals.length >= 2);
-            const targetTerminal =
-                connection.targetTerminal ?? targetSymbol.terminals[connection.targetFlipped ? 1 : 0];
+                const targetSymbol = nodeSymbol(connection.target.ID);
+                assert(targetSymbol.terminals.length >= 1);
+                assert(
+                    !connection.targetFlipped ||
+                        targetSymbol.terminals.length >= 2
+                );
+                const targetTerminal =
+                    connection.targetTerminal ??
+                    targetSymbol.terminals[connection.targetFlipped ? 1 : 0];
 
-            if (!sourceSymbol.terminals.includes(sourceTerminal)) {
-                throw new Error(
-                    `Terminal ${sourceTerminal} not found in symbol ${sourceSymbol.ID}`
+                if (!sourceSymbol.terminals.includes(sourceTerminal)) {
+                    throw new Error(
+                        `Terminal ${sourceTerminal} not found in symbol ${sourceSymbol.ID}`
+                    );
+                }
+
+                if (!targetSymbol.terminals.includes(targetTerminal)) {
+                    throw new Error(
+                        `Terminal ${targetTerminal} not found in symbol ${targetSymbol.ID}`
+                    );
+                }
+
+                connection.sourceTerminal = sourceTerminal;
+                connection.targetTerminal = targetTerminal;
+            } catch (err) {
+                throw new CompilationError(
+                    (err as Error).message,
+                    connection.location
                 );
             }
-
-            if (!targetSymbol.terminals.includes(targetTerminal)) {
-                throw new Error(
-                    `Terminal ${targetTerminal} not found in symbol ${targetSymbol.ID}`
-                );
-            }
-
-            connection.sourceTerminal = sourceTerminal;
-            connection.targetTerminal = targetTerminal;
         }
 
         this.resolved = true;
     }
 }
 
-function portID(port: Port): string {
+function portID(port: Pick<Port, "specifier" | "kind">): string {
     if (port.specifier == undefined) {
         return port.kind;
     }
@@ -305,19 +324,24 @@ function compileConnection(
 
     for (const c of connection.connections) {
         const [targetID, targetFlipped] = compileNode(schematic, c.target);
-        schematic.connection(
-            sourceID,
-            targetID,
-            c.sourceTerminal,
-            c.targetTerminal,
+        schematic.connection({
+            source: sourceID,
+            target: targetID,
+            sourceTerminal: c.sourceTerminal,
+            targetTerminal: c.targetTerminal,
             sourceFlipped,
             targetFlipped,
-        );
+            location: c.location,
+        });
         sourceID = targetID;
+        sourceFlipped = targetFlipped;
     }
 }
 
-function compileNode(schematic: CompiledSchematic, node: Node): [NodeID, boolean] {
+function compileNode(
+    schematic: CompiledSchematic,
+    node: Node
+): [NodeID, boolean] {
     switch (node.type) {
         case "Component":
             assert(node.type === "Component");
@@ -336,7 +360,10 @@ function compileComponent(
 ): [NodeID, boolean] {
     assert(component.type === "Component");
     const type = componentTypeFromDelimiters(component.open, component.close);
-    return [compileDefinition(schematic, component.definition, type), type?.flipped ?? false];
+    return [
+        compileDefinition(schematic, component.definition, type),
+        type?.flipped ?? false,
+    ];
 }
 
 interface ComponentType {
