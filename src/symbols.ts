@@ -1,5 +1,5 @@
 import assert = require("assert");
-import symbols from "./symbols.json";
+import { loadJSONResource } from "./resources";
 
 export interface SymbolInfo {
     ID: string;
@@ -11,16 +11,8 @@ export interface SymbolLibrary {
 }
 
 export class CoreSymbols implements SymbolLibrary {
-    private symbolInfo: Record<string, SymbolInfo> = symbols;
 
-    constructor(additional?: Record<string, SymbolInfo>) {
-        if (additional !== undefined) {
-            this.symbolInfo = {
-                ...this.symbolInfo,
-                ...additional,
-            };
-        }
-
+    constructor(readonly symbolInfo: Record<string, SymbolInfo>) {
         for (const info of Object.values(this.symbolInfo)) {
             assert(info.terminals.length >= 1);
         }
@@ -28,5 +20,10 @@ export class CoreSymbols implements SymbolLibrary {
 
     lookup(symbol: string): SymbolInfo {
         return this.symbolInfo[symbol.toUpperCase()];
+    }
+
+    static async load(path: string): Promise<CoreSymbols> {
+        const symbols = await loadJSONResource<Record<string, SymbolInfo>>(path);
+        return new CoreSymbols(symbols);
     }
 }

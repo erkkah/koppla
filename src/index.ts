@@ -80,7 +80,7 @@ async function main(args: string[]) {
     const skinFile = findResource("symbols/library.svg");
     await skin.load(skinFile);
 
-    const symbols = new CoreSymbols();
+    const symbols = await CoreSymbols.load("symbols/symbols.json");
 
     const input = await readFile(options.input);
     const parsed = parse(input.toString(), options.input);

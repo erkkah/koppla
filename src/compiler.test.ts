@@ -3,27 +3,27 @@ import {compile} from "./compiler";
 import { CoreSymbols } from "./symbols";
 
 describe("compiler", () => {
-    const symbols = new CoreSymbols();
+    const symbols = CoreSymbols.load("symbols/symbols.json");
 
-    it("compiles empty schematic", () => {
+    it("compiles empty schematic", async () => {
         const parsed = parse("");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(0);
         expect(compiled.nodes).toHaveLength(0);
     });
 
-    it("handles automatic assignment", () => {
+    it("handles automatic assignment", async () => {
         const parsed = parse("[22k]");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(0);
         expect(compiled.nodes).toHaveLength(1);
         const [node] = compiled.nodes;
         expect(node.ID).toBe("R1");
     });
 
-    it("handles duplicate definitions", () => {
+    it("handles duplicate definitions", async () => {
         const parsed = parse("[R1:22k] - [R1 \"resistor\"]");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(1);
         expect(compiled.nodes).toHaveLength(1);
         const [node] = compiled.nodes;
@@ -31,9 +31,9 @@ describe("compiler", () => {
         expect(node.description).toBe("resistor");
     });
 
-    it("handles chained connections", () => {
+    it("handles chained connections", async () => {
         const parsed = parse("[R1] - [R2] - [R3]");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(2);
         expect(compiled.nodes).toHaveLength(3);
         const [e1, e2] = compiled.edges;
@@ -43,16 +43,17 @@ describe("compiler", () => {
         expect(e2.target.ID).toBe("R3");
     });
 
-    it("fails to compile mismatched symbol and designator", () => {
+    it("fails to compile mismatched symbol and designator", async () => {
+        const loadedSymbols = await symbols;
         expect(() => {
             const parsed = parse("[C1] - |R1|");
-            compile(parsed, symbols);
+            compile(parsed, loadedSymbols);
         }).toThrow();
     });
 
-    it("handles diodes in both directions", () => {
+    it("handles diodes in both directions", async () => {
         const parsed = parse("|< - >|");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(1);
         expect(compiled.nodes).toHaveLength(2);
         const [d1, d2] = compiled.nodes;
@@ -64,9 +65,9 @@ describe("compiler", () => {
         expect(wire.targetTerminal).toBe("a");
     });
 
-    it("handles polarized caps in both directions", () => {
+    it("handles polarized caps in both directions", async () => {
         const parsed = parse("|] - [|");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(1);
         expect(compiled.nodes).toHaveLength(2);
         const [c1, c2] = compiled.nodes;
@@ -78,9 +79,9 @@ describe("compiler", () => {
         expect(wire.targetTerminal).toBe("+");
     });
 
-    it("compiles symbol overrides", () => {
+    it("compiles symbol overrides", async () => {
         const parsed = parse(">/ - >!D/");
-        const compiled = compile(parsed, symbols);
+        const compiled = compile(parsed, await symbols);
         expect(compiled.edges).toHaveLength(1);
         expect(compiled.nodes).toHaveLength(2);
         const [d1, d2] = compiled.nodes;

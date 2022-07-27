@@ -6,7 +6,8 @@ export interface SymbolLibrary {
     lookup(symbol: string): SymbolInfo;
 }
 export declare class CoreSymbols implements SymbolLibrary {
-    private symbolInfo;
-    constructor(additional?: Record<string, SymbolInfo>);
+    readonly symbolInfo: Record<string, SymbolInfo>;
+    constructor(symbolInfo: Record<string, SymbolInfo>);
     lookup(symbol: string): SymbolInfo;
+    static load(path: string): Promise<CoreSymbols>;
 }

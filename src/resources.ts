@@ -1,4 +1,5 @@
 import { existsSync } from "fs";
+import { readFile } from "fs/promises";
 import { join } from "path";
 
 export function findResource(path: string): string {
@@ -17,4 +18,17 @@ export function findResource(path: string): string {
     }
 
     throw new Error(`Resource "${path}" not found`);
+}
+
+export async function loadResource(path: string): Promise<Buffer> {
+    const resource = findResource(path);
+    return readFile(resource);
+}
+
+export async function loadJSONResource<
+    T extends Record<string, unknown> = Record<string, unknown>
+>(path: string): Promise<T> {
+    const resourceData = await loadResource(path);
+    const object = JSON.parse(resourceData.toString());
+    return object;
 }
