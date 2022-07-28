@@ -2,6 +2,8 @@
 
 Create electronic schematics in SVG format from readable code.
 
+
+
 ## Example
 
 ```
@@ -98,11 +100,11 @@ Single-line comments use the `#` symbol, and multi-line comments are delimited b
 ```
 # This is a single line comment
 
-- [ R1 ] - # And so is this
+[ R1 ] # And so is this
 
 #*
 This whole block is a comment.
-- [ R1 ] -
+[ R1 ]
 *#
 ```
 
@@ -112,12 +114,9 @@ This whole block is a comment.
 
 ## TODO
 
-* Add support for generic ICs, invoking terminals as needed
-* Make diodes and polarized caps work in both directions, flipping terminals as needed
-* Add schematic label / legend support
 * Add "h-flip" after rotation as possible optimization step
+* Add schematic label / legend support
 * Better error handling + reporting
 * Add option to render ohm symbol
 * Make component label / value drawing optional
 * Add watching build server
-* Add compiler line info

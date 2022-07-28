@@ -3,6 +3,7 @@ import { readFile } from "fs/promises";
 import { XMLBuilder, XMLParser } from "fast-xml-parser";
 import { encodeSVGPath, SVGPathData } from "svg-pathdata";
 import { StyleCache } from "./css";
+import { SymbolInfo } from "./symbols";
 type SVGCommand = SVGPathData["commands"][0];
 
 interface XMLNode extends Record<string, unknown> {
@@ -61,8 +62,21 @@ export class SymbolSkin {
         readonly svg: SVGNode,
         readonly size: Point,
         readonly terminals: Record<string, Point>,
-        readonly options?: { rotationSteps?: number[]; scale?: number }
+        readonly options?: {
+            rotationSteps?: number[];
+            dynamic?: boolean;
+        }
     ) {}
+
+    updateDynamicSize(size: Point) {
+        assert(this.options?.dynamic);
+        this.size.x = size.x;
+        this.size.y = size.y;
+        assert(this.svg.rect?.length === 1);
+        const rect = this.svg.rect[0]["@attrs"];
+        rect.width = `${size.x}`;
+        rect.height = `${size.y}`;
+    }
 
     get svgData(): string {
         const builder = new XMLBuilder({
@@ -84,6 +98,7 @@ export class Skin {
     private parsed: ParsedSVG | undefined;
     private cache: Record<string, SymbolSkin | undefined> = {};
     styleCache = new StyleCache("kpl");
+    static minimumBoxSize: Point = { x: 50, y: 50 };
 
     async load(skinFile: string) {
         const parser = new XMLParser({
@@ -98,11 +113,44 @@ export class Skin {
         this.parsed = parser.parse(skinData);
     }
 
-    findSymbol(symbol: string): SymbolSkin | undefined {
+    private dynamicSymbol(symbolInfo: SymbolInfo): SymbolSkin {
+        const boxSize: Point = { ...Skin.minimumBoxSize };
+        const box: SVGNode = {
+            "@attrs": {},
+            rect: [
+                {
+                    "@attrs": {
+                        x: "0",
+                        y: "0",
+                        width: `${boxSize.x}`,
+                        height: `${boxSize.y}`,
+                        class: "wire",
+                    },
+                },
+            ],
+        };
+        const terminals = symbolInfo.terminals.reduce((map, terminal) => {
+            map[terminal] = { x: 0, y: 0 };
+            return map;
+        }, {} as Record<string, Point>);
+
+        return new SymbolSkin(box, boxSize, terminals, {
+            dynamic: true,
+            rotationSteps: [0],
+        });
+    }
+
+    findSymbol(symbolInfo: SymbolInfo): SymbolSkin | undefined {
         assert(
             this.parsed !== undefined,
             "Must parse before accessing skin data"
         );
+
+        if (symbolInfo.dynamic) {
+            return this.dynamicSymbol(symbolInfo);
+        }
+
+        const symbol = symbolInfo.ID;
 
         if (symbol in this.cache) {
             return this.cache[symbol];
@@ -283,13 +331,13 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
                 const maxY = Math.max(segment.y1, segment.y2);
                 if (minY === 0) {
                     return {
-                        [terminal]: {x: segment.x1, y: 0}
+                        [terminal]: { x: segment.x1, y: 0 },
                     };
                 }
                 if (maxY === size.y) {
                     return {
-                        [terminal]: {x: segment.x1, y: maxY}
-                    };                    
+                        [terminal]: { x: segment.x1, y: maxY },
+                    };
                 }
             } else {
                 assert(segment.y1 === segment.y2);
@@ -298,13 +346,13 @@ function extractTerminals(svg: SVGNode, size: Point): Record<string, Point> {
                 const maxX = Math.max(segment.x1, segment.x2);
                 if (minX === 0) {
                     return {
-                        [terminal]: {x: 0, y: segment.y1}
+                        [terminal]: { x: 0, y: segment.y1 },
                     };
                 }
                 if (maxX === size.x) {
                     return {
-                        [terminal]: {x: maxX, y: segment.y1}
-                    };                    
+                        [terminal]: { x: maxX, y: segment.y1 },
+                    };
                 }
             }
         }

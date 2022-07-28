@@ -14,13 +14,19 @@ async function loadSkin(): Promise<Skin> {
 describe("Skin", () => {
     it("finds symbol", async () => {
         const skin = await loadSkin();
-        const found = skin.findSymbol("resistor");
+        const found = skin.findSymbol({
+            ID: "resistor",
+            terminals: [],
+        });
         expect(found).not.toBeNull();
     });
 
     it("strips symbols", async () => {
         const skin = await loadSkin();
-        const found = skin.findSymbol("resistor");
+        const found = skin.findSymbol({
+            ID: "resistor",
+            terminals: [],
+        });
         assert(found !== undefined);
         const attrs = found?.svg["@attrs"];
         expect(attrs["id"]).toBeUndefined();

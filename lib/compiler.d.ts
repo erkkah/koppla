@@ -1,5 +1,5 @@
 import { Schematic, Definition, Port, Value, Settings, SourceLocation } from "./parser";
-import { SymbolLibrary } from "./symbols";
+import { SymbolInfo, SymbolLibrary } from "./symbols";
 interface NodeID {
     ID: string;
     resolved: boolean;
@@ -21,6 +21,7 @@ export interface CompiledNode {
     description?: string;
     value?: Value;
     location: SourceLocation;
+    symbolInfo?: SymbolInfo;
 }
 export declare class CompiledSchematic {
     private ports;

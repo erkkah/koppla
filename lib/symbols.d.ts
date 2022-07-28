@@ -1,6 +1,7 @@
 export interface SymbolInfo {
     ID: string;
     terminals: string[];
+    dynamic?: boolean;
 }
 export interface SymbolLibrary {
     lookup(symbol: string): SymbolInfo;

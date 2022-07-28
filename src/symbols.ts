@@ -4,6 +4,7 @@ import { loadJSONResource } from "./resources";
 export interface SymbolInfo {
     ID: string;
     terminals: string[];
+    dynamic?: boolean;
 }
 
 export interface SymbolLibrary {
@@ -19,6 +20,7 @@ export class CoreSymbols implements SymbolLibrary {
     }
 
     lookup(symbol: string): SymbolInfo {
+        assert(symbol !== undefined);
         return this.symbolInfo[symbol.toUpperCase()];
     }
 

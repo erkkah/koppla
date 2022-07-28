@@ -11,7 +11,7 @@ import {
     Settings,
     SourceLocation,
 } from "./parser";
-import { SymbolLibrary } from "./symbols";
+import { SymbolInfo, SymbolLibrary } from "./symbols";
 
 class CompilationError extends Error {
     constructor(message: string, readonly location: SourceLocation) {
@@ -21,6 +21,10 @@ class CompilationError extends Error {
         this.stack = `${this.message}${"\n"} at ${this.location.source}:${
             this.location.start.line
         }:${this.location.start.column}`;
+    }
+
+    toString(): string {
+        return this.stack!;
     }
 }
 
@@ -34,6 +38,7 @@ interface CompiledPort {
     kind: string;
     symbol?: string;
     location: SourceLocation;
+    symbolInfo?: SymbolInfo;
 }
 
 type CompiledDefinition = Pick<
@@ -59,11 +64,12 @@ export interface CompiledNode {
     description?: string;
     value?: Value;
     location: SourceLocation;
+    symbolInfo?: SymbolInfo;
 }
 
 export class CompiledSchematic {
     private ports: CompiledPort[] = [];
-    private components: Array<CompiledDefinition & { ID: NodeID }> = [];
+    private components: Array<CompiledDefinition & { ID: NodeID, symbolInfo?: SymbolInfo }> = [];
     private connections: CompiledConnection[] = [];
     readonly settings: Record<string, string> = {};
     private unresolvedIndex = -1;
@@ -75,6 +81,7 @@ export class CompiledSchematic {
             designator: port.kind,
             symbol: port.symbol ?? port.kind,
             location: port.location,
+            symbolInfo: port.symbolInfo,
         }));
 
         const componentNodes: CompiledNode[] = this.components.map(
@@ -85,6 +92,7 @@ export class CompiledSchematic {
                 description: component.description,
                 value: component.value,
                 location: component.location,
+                symbolInfo: component.symbolInfo,
             })
         );
 
@@ -213,17 +221,42 @@ export class CompiledSchematic {
             }
         }
 
-        const nodes = this.getNodes();
-        const nodeSymbol = (ID: string) => {
-            const found = nodes.find((node) => node.ID === ID);
-            if (found) {
-                const symbolInfo = symbols.lookup(found.symbol);
+        for (const component of this.components) {
+            const symbol = component.symbol ?? component.designator.designator;
+            if (symbol === "U") {
+                // Special case
+                component.symbolInfo = {
+                    ID: symbol,
+                    terminals: [],
+                    dynamic: true,
+                };
+            } else {
+                const symbolInfo = symbols.lookup(symbol);
                 if (symbolInfo === undefined) {
                     throw new Error(
-                        `Symbol "${found.symbol}" not found for ${ID}`
+                        `Symbol "${symbol}" not found for ${component.ID.ID}`
                     );
                 }
-                return symbolInfo;
+                component.symbolInfo = symbolInfo;
+            }
+        }
+
+        for (const port of this.ports) {
+            const symbolInfo = symbols.lookup(port.symbol ?? port.kind);
+            if (symbolInfo === undefined) {
+                throw new Error(
+                    `Symbol "${port.symbol}" not found for ${port.ID}`
+                );
+            }
+            port.symbolInfo = symbolInfo;
+        }
+
+        const nodes = this.getNodes();
+        const nodeSymbol = (ID: string): SymbolInfo => {
+            const found = nodes.find((node) => node.ID === ID);
+            if (found) {
+                assert(found.symbolInfo !== undefined);
+                return found.symbolInfo;
             }
             assert(false, "Node not found while resolving connections");
         };
@@ -231,24 +264,48 @@ export class CompiledSchematic {
         for (const connection of this.connections) {
             try {
                 const sourceSymbol = nodeSymbol(connection.source.ID);
-                assert(sourceSymbol.terminals.length >= 1);
-                const sourceTerminal =
-                    connection.sourceTerminal ??
-                    (sourceSymbol.terminals.length > 1
-                        ? sourceSymbol.terminals[
-                              connection.sourceFlipped ? 0 : 1
-                          ]
-                        : sourceSymbol.terminals[0]);
+                let sourceTerminal = "";
+                if (sourceSymbol.dynamic) {
+                    if (connection.sourceTerminal == null) {
+                        throw new Error(
+                            `Terminal must be specified for connection from ${connection.source.ID}`
+                        );
+                    }
+                    sourceTerminal = connection.sourceTerminal;
+                    sourceSymbol.terminals.push(sourceTerminal);
+                } else {
+                    assert(sourceSymbol.terminals.length >= 1);
+                    sourceTerminal =
+                        connection.sourceTerminal ??
+                        (sourceSymbol.terminals.length > 1
+                            ? sourceSymbol.terminals[
+                                  connection.sourceFlipped ? 0 : 1
+                              ]
+                            : sourceSymbol.terminals[0]);
+                }
 
                 const targetSymbol = nodeSymbol(connection.target.ID);
-                assert(targetSymbol.terminals.length >= 1);
-                assert(
-                    !connection.targetFlipped ||
-                        targetSymbol.terminals.length >= 2
-                );
-                const targetTerminal =
-                    connection.targetTerminal ??
-                    targetSymbol.terminals[connection.targetFlipped ? 1 : 0];
+                let targetTerminal = "";
+                if (targetSymbol.dynamic) {
+                    if (connection.targetTerminal == null) {
+                        throw new Error(
+                            `Terminal must be specified for connection to ${connection.target.ID}`
+                        );
+                    }
+                    targetTerminal = connection.targetTerminal;
+                    targetSymbol.terminals.push(targetTerminal);
+                } else {
+                    assert(targetSymbol.terminals.length >= 1);
+                    assert(
+                        !connection.targetFlipped ||
+                            targetSymbol.terminals.length >= 2
+                    );
+                    targetTerminal =
+                        connection.targetTerminal ??
+                        targetSymbol.terminals[
+                            connection.targetFlipped ? 1 : 0
+                        ];
+                }
 
                 if (!sourceSymbol.terminals.includes(sourceTerminal)) {
                     throw new Error(

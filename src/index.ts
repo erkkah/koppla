@@ -89,7 +89,7 @@ async function main(args: string[]) {
     let rendered: string = "";
 
     try {
-        rendered = await render(compiled, symbols, skin, {
+        rendered = await render(compiled, skin, {
             optimize: true,
             fontFile: options.fontFile,
             fontSize: options.fontSize,
@@ -105,5 +105,5 @@ main(process.argv)
         //
     })
     .catch((err) => {
-        console.log(err.stack);
+        console.log(`${err}`);
     });

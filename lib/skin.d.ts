@@ -1,4 +1,5 @@
 import { StyleCache } from "./css";
+import { SymbolInfo } from "./symbols";
 interface XMLNode extends Record<string, unknown> {
     "@attrs": Record<string, string | undefined>;
 }
@@ -45,19 +46,22 @@ export declare class SymbolSkin {
     readonly terminals: Record<string, Point>;
     readonly options?: {
         rotationSteps?: number[] | undefined;
-        scale?: number | undefined;
+        dynamic?: boolean | undefined;
     } | undefined;
     constructor(svg: SVGNode, size: Point, terminals: Record<string, Point>, options?: {
         rotationSteps?: number[] | undefined;
-        scale?: number | undefined;
+        dynamic?: boolean | undefined;
     } | undefined);
+    updateDynamicSize(size: Point): void;
     get svgData(): string;
 }
 export declare class Skin {
     private parsed;
     private cache;
     styleCache: StyleCache;
+    static minimumBoxSize: Point;
     load(skinFile: string): Promise<void>;
-    findSymbol(symbol: string): SymbolSkin | undefined;
+    private dynamicSymbol;
+    findSymbol(symbolInfo: SymbolInfo): SymbolSkin | undefined;
 }
 export {};

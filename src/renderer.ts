@@ -13,7 +13,6 @@ import { CompiledSchematic, CompiledNode } from "./compiler";
 import { defaultFont, LoadedFont, loadFontAsDataURL } from "./font";
 import { NumericValue, Value } from "./parser";
 import { Skin, SymbolSkin, Point } from "./skin";
-import { SymbolLibrary } from "./symbols";
 
 type KopplaELKNode = ELKNode & {
     koppla: { node: CompiledNode; skin?: SymbolSkin; rotation: number };
@@ -24,7 +23,6 @@ type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> &
 
 export async function render(
     schematic: CompiledSchematic,
-    symbols: SymbolLibrary,
     skin: Skin,
     options: { optimize: boolean; fontFile?: string; fontSize: number } = {
         optimize: true,
@@ -40,11 +38,10 @@ export async function render(
     }
 
     const nodes: KopplaELKNode[] = schematic.nodes.map((node) => {
-        const symbolInfo = symbols.lookup(node.symbol);
-        if (symbolInfo === undefined) {
-            throw new Error(`Symbol "${node.symbol}" not found`);
-        }
-        const symbolSkin = skin.findSymbol(symbolInfo.ID);
+        const symbolInfo = node.symbolInfo;
+        assert(symbolInfo !== undefined);
+
+        const symbolSkin = skin.findSymbol(symbolInfo);
         if (symbolSkin === undefined) {
             throw new Error(`Symbol "${symbolInfo.ID}" not found in skin`);
         }
@@ -58,12 +55,18 @@ export async function render(
                         `Symbol ${symbolInfo.ID} terminal "${terminal}" not found in skin`
                     );
                 }
+
+                const labels = symbolInfo.dynamic
+                    ? [makeLabel(terminal, font.width, font.height)]
+                    : undefined;
+
                 return {
                     id: `${node.ID}:P${terminal}`,
                     x: portPoint.x,
                     y: portPoint.y,
                     width: 0,
                     height: 0,
+                    labels,
                 };
             }
         );
@@ -73,8 +76,18 @@ export async function render(
 
         let layoutOptions: Record<string, unknown> = {};
         if (node.designator === "GND") {
-            layoutOptions["org.eclipse.elk.layered.layering.layerConstraint"] =
-                "LAST";
+            layoutOptions["elk.layered.layering.layerConstraint"] = "LAST";
+        }
+        if (symbolInfo.dynamic) {
+            layoutOptions["elk.portConstraints"] = "FREE";
+            layoutOptions["elk.portLabels.placement"] =
+                "INSIDE NEXT_TO_PORT_IF_POSSIBLE";
+            layoutOptions["elk.nodeSize.options"] =
+                "COMPUTE_PADDING ASYMMETRICAL";
+            layoutOptions["elk.nodeSize.constraints"] =
+                "PORTS PORT_LABELS NODE_LABELS MINIMUM_SIZE";
+            const { x: minX, y: minY } = Skin.minimumBoxSize;
+            layoutOptions["elk.nodeSize.minimum"] = `(${minX}, ${minY})`;
         }
 
         return {
@@ -149,7 +162,7 @@ export async function render(
     */
 
     const prePass = (await elk.layout(
-        cloneWithSkin(graph, symbols, skin, { squareBoundingBox: true }),
+        cloneWithSkin(graph, skin, { squareBoundingBox: true }),
         {
             layoutOptions,
         }
@@ -159,7 +172,7 @@ export async function render(
         return renderSVG(prePass, font, skin);
     }
 
-    const graphWithSkin = cloneWithSkin(graph, symbols, skin, {
+    const graphWithSkin = cloneWithSkin(graph, skin, {
         squareBoundingBox: false,
     });
 
@@ -414,19 +427,17 @@ function distance(a: Point, b: Point): number {
 
 function cloneWithSkin(
     graph: KopplaELKRoot,
-    symbols: SymbolLibrary,
     skin: Skin,
     options: { squareBoundingBox: boolean } = { squareBoundingBox: false }
 ): KopplaELKRoot {
     const copy = deepCopy(graph);
 
     for (const child of copy.children ?? []) {
-        const symbol = child.koppla.node.symbol;
-        const symbolInfo = symbols.lookup(symbol);
+        const symbolInfo = child.koppla.node.symbolInfo;
         assert(symbolInfo !== undefined);
-        const symbolSkin = skin.findSymbol(symbolInfo.ID);
+        const symbolSkin = skin.findSymbol(symbolInfo);
         if (symbolSkin === undefined) {
-            throw new Error(`Symbol ${symbol} not found in skin`);
+            throw new Error(`Symbol ${symbolInfo.ID} not found in skin`);
         }
         child.koppla.skin = symbolSkin;
         if (options.squareBoundingBox) {
@@ -458,6 +469,13 @@ function renderSVG(
 
         const symbol = node.koppla.skin;
         assert(symbol !== undefined);
+
+        if (symbol.options?.dynamic) {
+            symbol.updateDynamicSize({
+                x: Number(node.width),
+                y: Number(node.height),
+            });
+        }
 
         const rotation = (node.koppla.rotation * 180) / Math.PI;
         const sourceReference = {
@@ -519,7 +537,16 @@ function renderSVG(
 
     const svgLabels = layout.children.flatMap((node) => {
         const labels = node.labels ?? [];
-        return labels.map((label) => {
+
+        const portLabels = (node.ports ?? []).flatMap((port) =>
+            (port.labels ?? []).map<Label>((label) => ({
+                ...label,
+                x: Number(port.x) + Number(label.x),
+                y: Number(port.y) + Number(label.y),
+            }))
+        );
+
+        return [...labels, ...portLabels].map((label) => {
             const x = round(Number(node.x) + Number(label.x));
             const y = round(Number(node.y) + Number(label.y));
             return (
@@ -601,9 +628,17 @@ function labelsFromNode(node: CompiledNode, font: LoadedFont): Label[] {
         labels.push(makeLabel(node.description, font.width, font.height));
     }
     if (node.value) {
-        labels.push(
-            makeLabel(valueToString(node.value), font.width, font.height)
+        const label = makeLabel(
+            valueToString(node.value),
+            font.width,
+            font.height
         );
+        if (node.symbolInfo?.dynamic) {
+            label.layoutOptions = {
+                "elk.nodeLabels.placement": "INSIDE H_CENTER V_CENTER",
+            };
+        }
+        labels.push(label);
     }
     return labels;
 }
