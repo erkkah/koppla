@@ -658,5 +658,7 @@ function valueToString(value: Value): string {
 
 function formatValue(value: NumericValue): string {
     const prefix = value.prefix === "u" ? "µ" : value.prefix;
-    return `${value.value}${prefix || ""}${value.unit || ""}`;
+    const ohmega = "\u2126";
+    const unit = ["o", "ohm"].includes(value.unit?.toLowerCase()) ? ohmega : "";
+    return `${value.value}${prefix || ""}${unit}`;
 }
