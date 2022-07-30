@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width,initial-scale=1" />
+    </head>
+    <body>
+        {svg}
+        <script>
+            function reloader() {
+                let lastUpdated = 0;
+
+                function checkLastUpdated() {
+                    var req = new XMLHttpRequest();
+                    req.addEventListener("load", () => {
+                        const response = JSON.parse(req.response);
+                        const updated = response.updated || lastUpdated;
+                        if (lastUpdated > 0 && updated > lastUpdated) {
+                            location.reload();
+                        } else {
+                            lastUpdated = updated;
+                            setTimeout(checkLastUpdated, 500);
+                        }
+                    });
+                    req.open("GET", document.URL + "?lastUpdated");
+                    req.send();
+                }
+
+                setTimeout(checkLastUpdated, 1000);
+            }
+            reloader();
+        </script>
+    </body>
+</html>

@@ -309,13 +309,13 @@ export class CompiledSchematic {
 
                 if (!sourceSymbol.terminals.includes(sourceTerminal)) {
                     throw new Error(
-                        `Terminal ${sourceTerminal} not found in symbol ${sourceSymbol.ID}`
+                        `Terminal "${sourceTerminal}" not found in symbol "${sourceSymbol.ID}"`
                     );
                 }
 
                 if (!targetSymbol.terminals.includes(targetTerminal)) {
                     throw new Error(
-                        `Terminal ${targetTerminal} not found in symbol ${targetSymbol.ID}`
+                        `Terminal "${targetTerminal}" not found in symbol "${targetSymbol.ID}"`
                     );
                 }
 

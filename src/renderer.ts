@@ -8,10 +8,16 @@ import { defaultFont, LoadedFont, loadFontFromFile, loadFontFromFont, trimFont }
 import { KopplaELKRoot, layout } from "./layout";
 import { Skin } from "./skin";
 
+export interface RenderOptions {
+    optimize: boolean;
+    fontFile?: string;
+    fontSize: number;
+}
+
 export async function render(
     schematic: CompiledSchematic,
     skin: Skin,
-    options: { optimize: boolean; fontFile?: string; fontSize: number } = {
+    options: RenderOptions = {
         optimize: true,
         fontSize: 20,
     }

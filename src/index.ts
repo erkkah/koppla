@@ -7,13 +7,16 @@ import { CoreSymbols } from "./symbols";
 import { Skin } from "./skin";
 import { extname } from "path";
 import { readFile, writeFile } from "fs/promises";
-import { findResource } from "./resources";
+import { findResource, loadResource } from "./resources";
+import { serve } from "./serve";
 
 interface Options {
     input: string;
     output: string;
     fontFile: string;
     fontSize: number;
+    watch: boolean;
+    port: number;
 }
 
 function parseOption(option: string): [string, string] {
@@ -22,7 +25,7 @@ function parseOption(option: string): [string, string] {
         throw new Error("Failed to parse option");
     }
     const name = matches[1];
-    const value = matches.length === 3 ? matches[2] : "true";
+    const value = matches[2] !== undefined ? matches[2] : "true";
     return [name, value];
 }
 
@@ -33,6 +36,8 @@ function parseArgs(args: string[]): Options {
         fontFile: "",
         output: "",
         fontSize: 20,
+        watch: false,
+        port: 8080,
     };
 
     for (const arg of args) {
@@ -44,6 +49,12 @@ function parseArgs(args: string[]): Options {
                     break;
                 case "svg":
                     options.output = value;
+                    break;
+                case "watch":
+                    options.watch = Boolean(value);
+                    break;
+                case "port":
+                    options.port = Number(value);
                     break;
                 default:
                     console.log(`Unknown option ${name}`);
@@ -82,6 +93,19 @@ async function main(args: string[]) {
 
     const symbols = await CoreSymbols.load("symbols/symbols.json");
 
+    if (options.watch) {
+        await watchAndRender(options, symbols, skin);
+        console.log(`Listening on port ${options.port}`);
+    } else {
+        await renderToFile(options, symbols, skin);
+    }
+}
+
+async function renderToFile(
+    options: Options,
+    symbols: CoreSymbols,
+    skin: Skin
+) {
     const input = await readFile(options.input);
     const parsed = parse(input.toString(), options.input);
     const compiled = compile(parsed, symbols);
@@ -98,6 +122,36 @@ async function main(args: string[]) {
         console.log(`Rendering failed: ${err}`);
     }
     await writeFile(options.output, rendered);
+}
+
+async function watchAndRender(
+    options: Options,
+    symbols: CoreSymbols,
+    skin: Skin
+) {
+    const template = (await loadResource("static/watch.html")).toString();
+
+    serve(options.input, options.port, async (source) => {
+        let rendered: string = "";
+
+        try {
+            const input = await readFile(source);
+            const parsed = parse(input.toString(), source);
+            const compiled = compile(parsed, symbols);
+
+            rendered = await render(compiled, skin, {
+                optimize: true,
+                fontFile: options.fontFile,
+                fontSize: options.fontSize,
+            });
+        } catch (err) {
+            rendered = `<pre>${err}</pre>`;
+        }
+
+        const content = template.replace("{svg}", rendered);
+
+        return { content, type: "text/html" };
+    });
 }
 
 main(process.argv)
