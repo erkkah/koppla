@@ -1,35 +1,67 @@
 import { readFile } from "fs/promises";
-import {parse} from "opentype.js";
+import { Font, Glyph, parse } from "opentype.js";
 
 export interface LoadedFont {
+    font?: Font;
     dataURL?: string;
     width: number;
     height: number;
 }
 
-export async function loadFontAsDataURL(path: string, size: number): Promise<LoadedFont> {
+export async function loadFontFromFile(
+    path: string,
+    size: number
+): Promise<LoadedFont> {
     const fileData = await readFile(path);
     const font = parse(fileData.buffer);
-    
-    const xWidth = font.getAdvanceWidth("x", size);
-    for (const c of "XiyZÅ0|") {
-        const width = font.getAdvanceWidth(c, size);
-        if (width != xWidth) {
-            throw new Error("Only monospaced fonts are supported");
-        }
-    }
 
-    const encoded = fileData.toString("base64");
+    return loadFontFromFont(font, size);
+}
+
+export function loadFontFromFont(font: Font, size: number): LoadedFont {
+    const firstGlyph = font.glyphs.get(0);
+    const firstChar = String.fromCharCode(firstGlyph.unicode);
+    const charWidth = font.getAdvanceWidth(firstChar, size);
+    const fontData = Buffer.from(font.toArrayBuffer());
+    const encoded = fontData.toString("base64");
     return {
+        font,
         dataURL: `data:application/octet-stream;base64,${encoded}`,
-        width: xWidth,
+        width: charWidth,
         height: size,
     };
+    
+}
+
+export async function loadFont(path: string): Promise<Font> {
+    const fileData = await readFile(path);
+    const font = parse(fileData.buffer);
+    return font;
+}
+
+export function trimFont(font: Font, subset: string): Font {
+    const glyphs: Glyph[] = [];
+    // x is always used for measuring above
+    if (!subset.includes("x")) {
+        subset += "x";
+    }
+    for (const char of subset) {
+        const found = font.charToGlyph(char);
+        glyphs.push(found);
+    }
+    return new Font({
+        ascender: font.ascender,
+        descender: font.descender,
+        familyName: font.names.fontFamily.en,
+        glyphs,
+        styleName: font.names.fontSubfamily.en,
+        unitsPerEm: font.unitsPerEm,
+    });
 }
 
 export function defaultFont(size: number): LoadedFont {
     return {
         width: size / 2, // "best" guess
         height: size,
-    }
+    };
 }

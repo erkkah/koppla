@@ -1,10 +1,10 @@
 import { strict as assert } from "assert";
-import { Label } from "elkjs";
+import { Node as ELKNode, Label } from "elkjs";
 
 const DEBUG = false;
 
 import { CompiledSchematic } from "./compiler";
-import { defaultFont, LoadedFont, loadFontAsDataURL } from "./font";
+import { defaultFont, LoadedFont, loadFontFromFile, loadFontFromFont, trimFont } from "./font";
 import { KopplaELKRoot, layout } from "./layout";
 import { Skin } from "./skin";
 
@@ -17,11 +17,27 @@ export async function render(
     }
 ): Promise<string> {
     let font: LoadedFont = defaultFont(options.fontSize);
+    
     if (options.fontFile) {
-        font = await loadFontAsDataURL(options.fontFile, options.fontSize);
+        font = await loadFontFromFile(options.fontFile, options.fontSize);
     }
     const laidOut = await layout(schematic, skin, font, options);
+    if (font.font) {
+        const usedChars = charsInNode(laidOut);
+        font = loadFontFromFont(trimFont(font.font, usedChars), options.fontSize);
+    }
     return renderSVG(laidOut as KopplaELKRoot, font, skin);
+}
+
+function charsInNode(node: ELKNode): string {
+    const labels = (node.children ?? []).flatMap((node) => node.labels ?? []);
+    const usedChars = new Set<string>;
+    for (const label of labels) {
+        for (const char of label.text) {
+            usedChars.add(char);
+        }
+    }
+    return [...usedChars.keys()].join("");  
 }
 
 function round(value: number | string | undefined): string {
@@ -67,7 +83,7 @@ function renderSVG(
         ];
         if (rotation !== 0) {
             transforms.push(
-                `rotate(${rotation},${sourceReference.x},${sourceReference.y})`
+                `rotate(${rotation},${round(sourceReference.x)},${round(sourceReference.y)})`
             );
         }
         if (node.koppla.flip) {
@@ -88,10 +104,10 @@ function renderSVG(
     const svgWires = layout.edges.reduce((commands, edge) => {
         const lines = (edge.sections ?? []).reduce((lines, section) => {
             const points = (section.bendPoints ?? []).concat(section.endPoint);
-            const lineTos = points.map((point) => `L${point.x} ${point.y}`);
+            const lineTos = points.map((point) => `L${round(point.x)} ${round(point.y)}`);
             lines.push(
-                `M${section.startPoint.x} ${
-                    section.startPoint.y
+                `M${round(section.startPoint.x)} ${
+                    round(section.startPoint.y)
                 } ${lineTos.join("")}`
             );
             return lines;
@@ -106,7 +122,7 @@ function renderSVG(
         return edge.junctionPoints?.map((point) => {
             const x = round(Number(point.x));
             const y = round(Number(point.y));
-            return `<circle cx="${x}" cy="${y}" r="5" style="fill:#000"/>`;
+            return `<circle cx="${x}" cy="${y}" r="5" class="dot"/>`;
         });
     });
 
@@ -169,6 +185,9 @@ function renderSVG(
         stroke-miterlimit:4;
         stroke-dasharray:none;
         stroke-opacity:1;
+    }
+    .dot {
+        fill:#000;
     }
     ${skin.styleCache.CSS}
     `;
