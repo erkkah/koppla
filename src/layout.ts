@@ -14,7 +14,12 @@ import { NumericValue, Value } from "./parser";
 import { Skin, SymbolSkin } from "./skin";
 
 export type KopplaELKNode = ELKNode & {
-    koppla: { node: CompiledNode; skin?: SymbolSkin; rotation: number };
+    koppla: {
+        node: CompiledNode;
+        skin?: SymbolSkin;
+        rotation: number;
+        flip: boolean;
+    };
 };
 
 export type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> &
@@ -88,7 +93,7 @@ export async function layout(
             labels: labelsFromNode(node, font),
             width,
             height,
-            koppla: { node, rotation: 0 },
+            koppla: { node, rotation: 0, flip: false },
             ports,
             layoutOptions,
         };
@@ -120,10 +125,9 @@ export async function layout(
         "elk.direction": "DOWN",
         "elk.edgeRouting": "ORTHOGONAL",
         "elk.spacing.labelLabel": 3,
-        //"elk.layered.layering.strategy": "NETWORK_SIMPLEX",
         "elk.layered.layering.strategy": "LONGEST_PATH",
         "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
-        //"elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+        "elk.layered.nodePlacement.bk.fixedAlignment": "RIGHTDOWN",
         "elk.layered.compaction.postCompaction.strategy": "LEFT",
         "elk.edge.thickness": 3.5,
         ...layoutOptionsFromSettings,
@@ -247,46 +251,47 @@ function setupLabelPlacements(graph: KopplaELKRoot) {
 
         const portEdges: Edge[] = [];
 
-        for (const port of child.ports ?? []) {
-            assert(port.x !== undefined);
-            assert(port.y !== undefined);
-
-            if (port.x === 0) {
-                portEdges.push("W");
-                continue;
-            }
-            if (port.x === child.width) {
-                portEdges.push("E");
-                continue;
-            }
-            if (port.y === 0) {
-                portEdges.push("N");
-                continue;
-            }
-            if (port.y === child.height) {
-                portEdges.push("S");
-                continue;
-            }
-        }
-
         let placement = "OUTSIDE H_LEFT V_TOP";
 
-        const placements: Record<Edge, string> = {
-            N: "OUTSIDE H_CENTER V_TOP",
-            S: "OUTSIDE H_CENTER V_BOTTOM",
-            E: "OUTSIDE H_RIGHT V_CENTER",
-            W: "OUTSIDE H_LEFT V_CENTER",
-        };
+        if (!child.koppla.skin?.options?.dynamic) {
+            for (const port of child.ports ?? []) {
+                assert(port.x !== undefined);
+                assert(port.y !== undefined);
 
-        const edgePriorities: Edge[] = ["W", "E", "N", "S"];
+                if (port.x === 0) {
+                    portEdges.push("W");
+                    continue;
+                }
+                if (port.x === child.width) {
+                    portEdges.push("E");
+                    continue;
+                }
+                if (port.y === 0) {
+                    portEdges.push("N");
+                    continue;
+                }
+                if (port.y === child.height) {
+                    portEdges.push("S");
+                    continue;
+                }
+            }
 
-        for (const edge of edgePriorities) {
-            if (!portEdges.includes(edge)) {
-                placement = placements[edge];
-                break;
+            const placements: Record<Edge, string> = {
+                N: "OUTSIDE H_CENTER V_TOP",
+                S: "OUTSIDE H_CENTER V_BOTTOM",
+                E: "OUTSIDE H_RIGHT V_CENTER",
+                W: "OUTSIDE H_LEFT V_CENTER",
+            };
+
+            const edgePriorities: Edge[] = ["W", "E", "N", "S"];
+
+            for (const edge of edgePriorities) {
+                if (!portEdges.includes(edge)) {
+                    placement = placements[edge];
+                    break;
+                }
             }
         }
-
         child.layoutOptions = {
             ...child.layoutOptions,
             "org.eclipse.elk.nodeLabels.placement": placement,

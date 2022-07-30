@@ -1,19 +1,12 @@
 import { strict as assert } from "assert";
-import { Label, Node as ELKNode } from "elkjs";
+import { Label } from "elkjs";
 
 const DEBUG = false;
 
-import { CompiledSchematic, CompiledNode } from "./compiler";
+import { CompiledSchematic } from "./compiler";
 import { defaultFont, LoadedFont, loadFontAsDataURL } from "./font";
-import { layout } from "./layout";
-import { Skin, SymbolSkin } from "./skin";
-
-type KopplaELKNode = ELKNode & {
-    koppla: { node: CompiledNode; skin?: SymbolSkin; rotation: number };
-};
-
-type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> &
-    Pick<Required<ELKNode>, "edges"> & { children: KopplaELKNode[] };
+import { KopplaELKRoot, layout } from "./layout";
+import { Skin } from "./skin";
 
 export async function render(
     schematic: CompiledSchematic,
@@ -77,6 +70,9 @@ function renderSVG(
                 `rotate(${rotation},${sourceReference.x},${sourceReference.y})`
             );
         }
+        if (node.koppla.flip) {
+            transforms.push(`translate(${round(symbol.size.x)}, 0) scale(-1, 1)`);
+        }
         const figure = `<g transform="${transforms.join("")}">${
             symbol?.svgData
         }</g>`;
@@ -129,7 +125,10 @@ function renderSVG(
             const x = round(Number(node.x) + Number(label.x));
             const y = round(Number(node.y) + Number(label.y));
             return (
-                `<text x="${x}" y="${y}" alignment-baseline="hanging">${label.text}</text>` +
+                `
+                <rect x="${x}" y="${y}" width="${label.width}" height="${label.height}" class="textbg"/>
+                <text x="${x}" y="${y}" alignment-baseline="hanging">${label.text}</text>
+                ` +
                 (DEBUG
                     ? `<rect x="${x}" y="${y}" width="${label.width}" height="${label.height}" style="fill:none;stroke:#000000;stroke-width:1;"/>`
                     : "")
@@ -154,7 +153,12 @@ function renderSVG(
         font-weight: normal;
         fill: #000;
         fill-opacity: 1;
-        stroke: none";
+        stroke: none;
+    }
+    .textbg {
+        fill: #FFFFFF;
+        fill-opacity: 0.8;
+        stroke: none;
     }
     .wire {
         fill:none;

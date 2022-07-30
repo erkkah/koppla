@@ -7,6 +7,7 @@ export declare type KopplaELKNode = ELKNode & {
         node: CompiledNode;
         skin?: SymbolSkin;
         rotation: number;
+        flip: boolean;
     };
 };
 export declare type KopplaELKRoot = Omit<ELKNode, "children" | "edges"> & Pick<Required<ELKNode>, "edges"> & {

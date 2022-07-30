@@ -4,6 +4,11 @@ import { Node as ELKNode, Port as ELKPort } from "elkjs";
 import { KopplaELKNode, KopplaELKRoot } from "./layout";
 import { Point } from "./skin";
 
+/**
+ * Finds the optimal orientation of all nodes with fixed port positions
+ * to most closely match the preprocessed version that was laid out without
+ * port restrictions.
+ */
 export function optimize(
     root: KopplaELKRoot,
     preprocessed: KopplaELKRoot
@@ -31,6 +36,9 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
     }
     assert(fixed.ports.length === processed.ports?.length);
 
+    let flipped = false;
+    const flippedNode = hFlipNode(fixed);
+
     let bestIndex = -1;
     const rotations = fixed.koppla.skin?.options?.rotationSteps ?? [0, 1, 2, 3];
 
@@ -41,8 +49,10 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
             rotatedNode(fixed, rotation, { makeSquare: true })
         );
 
-        const distances = rotatedNodes.map((node) =>
-            totalPortDistance(node, processed)
+        let flippedAndRotatedNodes = rotatedNodes.map((node) => hFlipNode(node));
+
+        const distances = [...rotatedNodes, ...flippedAndRotatedNodes].map(
+            (node) => totalPortDistance(node, processed)
         );
         let minDistance = Number.MAX_VALUE;
 
@@ -50,20 +60,43 @@ function rotateNode(fixed: KopplaELKNode, processed: ELKNode): KopplaELKNode {
             const distance = distances[i];
             if (distance < minDistance) {
                 minDistance = distance;
-                bestIndex = i;
+                bestIndex = i % rotatedNodes.length;
+                flipped = i >= rotatedNodes.length;
             }
         }
     }
 
     const rotationSteps = rotations[bestIndex];
-    const bestNode = rotatedNode(fixed, rotationSteps, {
+    const bestNode = rotatedNode(flipped ? flippedNode : fixed, rotationSteps, {
         makeSquare: false,
     });
     bestNode.koppla.rotation = (rotationSteps * Math.PI) / 2;
+    bestNode.koppla.flip = flipped;
     if (rotationSteps === 1 || rotationSteps === 3) {
         [bestNode.width, bestNode.height] = [bestNode.height, bestNode.width];
     }
     return bestNode;
+}
+
+/**
+ * Flips the ports of a node horizontally.
+ */
+function hFlipNode<T extends ELKNode>(node: T): T {
+    const flippedPorts = (node.ports ?? []).map((port) => {
+        assert(node.width !== undefined);
+        assert(port.x !== undefined);
+
+        const flippedX = node.width - port.x;
+        return {
+            ...port,
+            x: flippedX,
+        };
+    });
+
+    return {
+        ...node,
+        ports: flippedPorts,
+    };
 }
 
 /**
@@ -89,7 +122,7 @@ function rotatedNode<T extends ELKNode>(
     assert(node.y === undefined);
     assert(node.width !== undefined);
     assert(node.height !== undefined);
-    assert(Number.isInteger(steps));
+    assert(Number.isInteger(steps), `${steps} is not integer`);
     assert(steps >= 0 && steps <= 3);
 
     const rotation = (steps * Math.PI) / 2;
