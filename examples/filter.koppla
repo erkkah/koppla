@@ -1,8 +1,8 @@
 # Active filter
 
-<V:+15> - v+/U1!popamp/v- - <V:-15!NV>
+<V:+15> - v+/U1:TL072!popamp/v- - <V:-15!NV>
 
 <in> - |C1:62nF| - [5k] - <gnd>
 |C1| - +/U1/out - [15k] - -/U1/
-/U1/- - [8.2k] - <gnd>
+/U1/- - [8.2ko] - <gnd>
 /U1/out - <out>

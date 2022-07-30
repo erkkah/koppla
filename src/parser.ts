@@ -179,7 +179,7 @@ export function createParser(): Parser {
             location: location()
         };
     }
-    Setting = WSC key:AlphaNumeric WSC ":" WSC value:(QuotedString / Decimal / Integer / Boolean) WSC ";" {
+    Setting = WSC key:AlphaNumeric WSC ":" WSC value:(QuotedString / Decimal / Integer / Boolean) WSC ","? {
         return {
             key,
             value,

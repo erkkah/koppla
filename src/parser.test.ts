@@ -37,9 +37,9 @@ describe("parse settings", () => {
         const schematic = parse(`
         # Settings:
         {
-            a.string: "a string value";
-            an.integer: 123;
-            a.decimal: 3.14;
+            a.string: "a string value",
+            an.integer: 123,
+            a.decimal: 3.14,
         }
         `);
         expect(schematic.body).toHaveLength(1);
