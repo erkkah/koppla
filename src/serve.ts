@@ -42,5 +42,9 @@ export function serve(
         }
     });
 
+    server.on("listening", () => {
+        console.log(`Listening on http://localhost:${port}`);
+    });
+
     server.listen(port);
 }

@@ -1,0 +1,10 @@
+#!/usr/bin/env node
+
+require("../lib/index").main(process.argv)
+    .then(() => {
+        //
+    })
+    .catch((err) => {
+        console.error(err);
+        process.exit(42);
+    });

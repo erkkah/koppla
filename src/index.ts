@@ -9,78 +9,77 @@ import { extname } from "path";
 import { readFile, writeFile } from "fs/promises";
 import { findResource, loadResource } from "./resources";
 import { serve } from "./serve";
+import { CommandlineOptions, parseArguments } from "./args";
 
-interface Options {
+interface Options extends CommandlineOptions {
     input: string;
     output: string;
     fontFile: string;
     fontSize: number;
     watch: boolean;
     port: number;
+    help: boolean;
+    h: boolean;
 }
 
-function parseOption(option: string): [string, string] {
-    const matches = option.match(/^-+(\w+)(?:=(\S+))?$/);
-    if (!matches) {
-        throw new Error("Failed to parse option");
+function usage(message?: string): never {
+    if (message) {
+        console.log(message);
     }
-    const name = matches[1];
-    const value = matches[2] !== undefined ? matches[2] : "true";
-    return [name, value];
+    console.log(`
+usage:
+    koppla [options] <input.koppla>
+
+options:
+    -output=<output.svg>
+    -fontFile=<font.ttf>
+    -fontSize=<font size in pixels>
+    -watch
+    -port=<preview port, defaults to 8080>
+`);
+    process.exit(1);
 }
 
 function parseArgs(args: string[]): Options {
-    const files: string[] = [];
-    const options: Options = {
+    const optionTemplate: Options = {
         input: "",
         fontFile: "",
         output: "",
         fontSize: 20,
         watch: false,
         port: 8080,
+        help: false,
+        h: false,
     };
 
-    for (const arg of args) {
-        if (arg.startsWith("-")) {
-            const [name, value] = parseOption(arg);
-            switch (name) {
-                case "font":
-                    options.fontFile = value;
-                    break;
-                case "svg":
-                    options.output = value;
-                    break;
-                case "watch":
-                    options.watch = Boolean(value);
-                    break;
-                case "port":
-                    options.port = Number(value);
-                    break;
-                default:
-                    console.log(`Unknown option ${name}`);
-                    process.exit(1);
-            }
-        } else {
-            files.push(arg);
+    try {
+        const [options, files] = parseArguments(args, optionTemplate);
+
+        if (options.help || options.h) {
+            usage();
         }
-    }
 
-    if (files.length < 1) {
-        console.log("Expected koppla file argument");
-        process.exit(1);
-    }
+        if (options.input === "") {
+            if (files.length < 1) {
+                usage("Expected input file argument");
+            }
+    
+            options.input = files[0];
+        }
 
-    options.input = files[0];
-    if (options.output.length === 0) {
-        options.output = options.input.replace(
-            new RegExp(`${extname(options.input)}$`),
-            ".svg"
-        );
+        if (options.output.length === 0) {
+            options.output = options.input.replace(
+                new RegExp(`${extname(options.input)}$`),
+                ".svg"
+            );
+        }
+        return options;
+    } catch (err) {
+        usage(`${err}`);
     }
-    return options;
 }
 
-async function main(args: string[]) {
+export async function main(args: string[]) {
     const options = parseArgs(args.slice(2));
 
     if (options.fontFile === "") {
@@ -88,14 +87,13 @@ async function main(args: string[]) {
     }
 
     const skin = new Skin();
-    const skinFile = findResource("symbols/library.svg");
+    const skinFile = findResource("symbols/skin.svg");
     await skin.load(skinFile);
 
     const symbols = await CoreSymbols.load("symbols/symbols.json");
 
     if (options.watch) {
         await watchAndRender(options, symbols, skin);
-        console.log(`Listening on port ${options.port}`);
     } else {
         await renderToFile(options, symbols, skin);
     }
@@ -153,11 +151,3 @@ async function watchAndRender(
         return { content, type: "text/html" };
     });
 }
-
-main(process.argv)
-    .then(() => {
-        //
-    })
-    .catch((err) => {
-        console.log(`${err}`);
-    });

@@ -3,7 +3,7 @@ import { join } from "path";
 import { SVGPathData } from "svg-pathdata";
 import { Skin } from "./skin";
 
-const skinFile = join(__dirname, "..", "symbols", "library.svg");
+const skinFile = join(__dirname, "..", "symbols", "skin.svg");
 
 async function loadSkin(): Promise<Skin> {
     const skin = new Skin();
