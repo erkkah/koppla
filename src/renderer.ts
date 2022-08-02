@@ -1,8 +1,6 @@
 import { strict as assert } from "assert";
 import { Node as ELKNode, Label } from "elkjs";
 
-const DEBUG = false;
-
 import { CompiledSchematic } from "./compiler";
 import { defaultFont, LoadedFont, loadFontFromFile, loadFontFromFont, trimFont } from "./font";
 import { KopplaELKRoot, layout } from "./layout";
@@ -10,6 +8,7 @@ import { Skin } from "./skin";
 
 export interface RenderOptions {
     optimize: boolean;
+    drawBoxes?: boolean;
     fontFile?: string;
     fontSize: number;
 }
@@ -19,6 +18,7 @@ export async function render(
     skin: Skin,
     options: RenderOptions = {
         optimize: true,
+        drawBoxes: false,
         fontSize: 20,
     }
 ): Promise<string> {
@@ -32,7 +32,7 @@ export async function render(
         const usedChars = charsInNode(laidOut);
         font = loadFontFromFont(trimFont(font.font, usedChars), options.fontSize);
     }
-    return renderSVG(laidOut as KopplaELKRoot, font, skin);
+    return renderSVG(laidOut as KopplaELKRoot, font, skin, !!options.drawBoxes);
 }
 
 function charsInNode(node: ELKNode): string {
@@ -53,7 +53,8 @@ function round(value: number | string | undefined): string {
 function renderSVG(
     layout: KopplaELKRoot,
     font: LoadedFont,
-    skin: Skin
+    skin: Skin,
+    drawBoxes: boolean,
 ): string {
     const svgSymbols = layout.children.reduce((commands, node) => {
         assert(node.x !== undefined);
@@ -99,7 +100,7 @@ function renderSVG(
             symbol?.svgData
         }</g>`;
         commands.push(figure);
-        if (DEBUG) {
+        if (drawBoxes) {
             commands.push(
                 `<rect x="${node.x}" y="${node.y}" width="${node.width}" height="${node.height}" style="fill:none;stroke:#000000;stroke-width:1;"/>`
             );
@@ -149,9 +150,9 @@ function renderSVG(
             return (
                 `
                 <rect x="${x}" y="${y}" width="${label.width}" height="${label.height}" class="textbg"/>
-                <text x="${x}" y="${y}" alignment-baseline="hanging">${label.text}</text>
+                <text x="${x}" y="${y}">${label.text}</text>
                 ` +
-                (DEBUG
+                (drawBoxes
                     ? `<rect x="${x}" y="${y}" width="${label.width}" height="${label.height}" style="fill:none;stroke:#000000;stroke-width:1;"/>`
                     : "")
             );
@@ -174,8 +175,8 @@ function renderSVG(
         font-size: ${font.height}px;
         font-weight: normal;
         fill: #000;
-        fill-opacity: 1;
         stroke: none;
+        alignment-baseline: hanging;
     }
     .textbg {
         fill: #FFFFFF;
@@ -187,10 +188,6 @@ function renderSVG(
         stroke:#000;
         stroke-width:3.5;
         stroke-linecap:round;
-        stroke-linejoin:miter;
-        stroke-miterlimit:4;
-        stroke-dasharray:none;
-        stroke-opacity:1;
     }
     .dot {
         fill:#000;
@@ -211,6 +208,9 @@ function renderSVG(
 }
 
 function minify(code: string): string {
-    const mini = code.replace(/^\s+/gm, "");
+    const mini = code.replace(/^\s+/gm, "").replace(/[{]([^}]+)[}]/gm, (_all, style: string) => {
+        const oneLine = (style?.split("\n") ?? []).join("");
+        return `{${oneLine}}`
+    });
     return mini;
 }

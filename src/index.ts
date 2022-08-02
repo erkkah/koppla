@@ -14,12 +14,18 @@ import { CommandlineOptions, parseArguments } from "./args";
 interface Options extends CommandlineOptions {
     input: string;
     output: string;
+
     fontFile: string;
     fontSize: number;
+
     watch: boolean;
     port: number;
+    
     help: boolean;
     h: boolean;
+
+    debugNoOptimize: boolean;
+    debugDrawBoxes: boolean;
 }
 
 function usage(message?: string): never {
@@ -50,6 +56,8 @@ function parseArgs(args: string[]): Options {
         port: 8080,
         help: false,
         h: false,
+        debugNoOptimize: false,
+        debugDrawBoxes: false,
     };
 
     try {
@@ -138,7 +146,8 @@ async function watchAndRender(
             const compiled = compile(parsed, symbols);
 
             rendered = await render(compiled, skin, {
-                optimize: true,
+                optimize: !options.debugNoOptimize,
+                drawBoxes: options.debugDrawBoxes,
                 fontFile: options.fontFile,
                 fontSize: options.fontSize,
             });
