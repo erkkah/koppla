@@ -4,6 +4,10 @@
   "main": "./lib/index.js",
   "bin": "./bin/koppla",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/erkkah/koppla.git"
+  },
   "dependencies": {
     "elkjs": "^0.7.1",
     "fast-xml-parser": "^4.0.9",
@@ -14,7 +18,11 @@
   },
   "files": [
     "./bin/*",
-    "./lib/*"
+    "./lib/*",
+    "./samples/*",
+    "./fonts/*",
+    "./static/*",
+    "./symbols/*"
   ],
   "typings": "./lib/index.d.ts",
   "scripts": {
