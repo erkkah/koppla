@@ -154,9 +154,12 @@ export async function layout(
         "elk.direction": "DOWN",
         "elk.edgeRouting": "ORTHOGONAL",
         "elk.spacing.labelLabel": 3,
+        "elk.spacing.edgeEdge": 15,
+        "elk.spacing.edgeNode": 15,
         "elk.layered.layering.strategy": "NETWORK_SIMPLEX",
         "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
         "elk.layered.nodePlacement.bk.fixedAlignment": "RIGHTDOWN",
+        //"elk.layered.compaction.postCompaction.strategy": "EDGE_LENGTH",
         "elk.layered.compaction.postCompaction.strategy": "LEFT",
         "elk.edge.thickness": 3.5,
         //"elk.layered.feedbackEdges": true,
@@ -274,8 +277,8 @@ function valueToString(value: Value): string {
 function formatValue(value: NumericValue): string {
     const prefix = value.prefix === "u" ? "µ" : value.prefix;
     const ohmega = "\u2126";
-    const unit = ["o", "ohm"].includes(value.unit?.toLowerCase()) ? ohmega : "";
-    return `${value.value}${prefix || ""}${unit}`;
+    const unit = ["o", "ohm"].includes(value.unit?.toLowerCase()) ? ohmega : value.unit;
+    return `${value.value}${prefix || ""}${unit ?? ""}`;
 }
 
 function setupLabelPlacements(graph: KopplaELKRoot) {
