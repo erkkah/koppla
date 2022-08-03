@@ -49,7 +49,7 @@ The font is embedded with each generated SVG. Before embedding the font is strip
 ### Components
 
 
-| Part | Designator | Code |
+| Component | Designator | Code |
 | --- | --- | --- |
 | Resistor | R | `- [] -` |
 | Capacitor | C | `- \|\| -` |
@@ -84,6 +84,13 @@ All parts are optional. Simply specifying a value is fine:
 |22nF|
 ```
 
+The unit "ohm" or "o" will produce the ohm symbol, for example `10kohm` yields `10kΩ`
+
+SI prefixes `n` to `G` are supported and the letter `u` will produce the mu symbol: `µ`.
+
+> :warning: This prefix syntax causes units starting with the letter "u" to be misparsed.
+    For example the value `42 units` will be interpreted as 42 µnits (micro candela per square meter). Not likely to be a problem in your everyday schematic. :)
+
 If no symbol is specified, the default symbol for the component type is used.
 Component ID and value must be separated by a colon if both are specified.
 
@@ -101,7 +108,7 @@ There are four kinds of ports:
 Multiple ports of a certain kind are supported by adding a specifier, separated by a colon:
 
 ```
-<v:+22v> - [10ohm "10w"] - <out:supply>
+<v:+22V> - [10ohm "10W"] - <out:supply>
 ```
 
 ### Connections
@@ -139,7 +146,26 @@ This whole block is a comment.
 
 ### Component definitions
 
-TBW
+Component definitions can be provided separately as an alternative or complement to writing
+the definitions within the components themselves.
+
+Separate components definitions start with a component ID followed by a colon and one or
+more component definition parts.
+
+```
+R1: 1k "20W"
+C1: "ceramic"
+```
+
+Note that each definition overrides earlier definitions part by part:
+
+```
+[R1: 10k "plain"]
+
+R1: "wire wound"
+```
+
+![](examples/override_example.svg)
 
 ## Symbols
 
