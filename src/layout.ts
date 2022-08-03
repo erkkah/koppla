@@ -9,7 +9,12 @@ import ELK, {
 
 import { CompiledNode, CompiledSchematic } from "./compiler";
 import { LoadedFont } from "./font";
-import { optimize } from "./optimize";
+import {
+    lockPortPlacements,
+    optimize,
+    PortPlacement,
+    portPlacements,
+} from "./optimize";
 import { NumericValue, Value } from "./parser";
 import { Skin, SymbolSkin } from "./skin";
 
@@ -76,7 +81,7 @@ export async function layout(
         const height = symbolSkin.size.y;
 
         let layoutOptions: Record<string, unknown> = {};
-        
+
         if (node.designator === "GND") {
             /*
             	NONE
@@ -85,7 +90,8 @@ export async function layout(
                 LAST
                 LAST_SEPARATE
             */
-            layoutOptions["elk.layered.layering.layerConstraint"] = "LAST_SEPARATE";
+            layoutOptions["elk.layered.layering.layerConstraint"] =
+                "LAST_SEPARATE";
         }
 
         let xpos = xposCounter++;
@@ -184,22 +190,26 @@ export async function layout(
         EDGE_LENGTH
     */
 
-    const prePass = (await elk.layout(
+    const pass1 = (await elk.layout(
         cloneWithSkin(graph, skin, { squareBoundingBox: true }),
         {
             layoutOptions,
         }
     )) as KopplaELKRoot;
 
+    lockPortPlacements(pass1);
+
+    const pass2 = (await elk.layout(pass1, { layoutOptions })) as KopplaELKRoot;
+
     if (!options.optimize) {
-        return prePass;
+        return pass2;
     }
 
     const graphWithSkin = cloneWithSkin(graph, skin, {
         squareBoundingBox: false,
     });
 
-    const optimized = optimize(graphWithSkin, prePass);
+    const optimized = optimize(graphWithSkin, pass2);
     setupLabelPlacements(optimized);
 
     const laidOut = await elk.layout(optimized, {
@@ -269,58 +279,34 @@ function formatValue(value: NumericValue): string {
 }
 
 function setupLabelPlacements(graph: KopplaELKRoot) {
-    type Edge = "N" | "S" | "E" | "W";
-
     for (const child of graph.children) {
         assert(child.width !== undefined);
         assert(child.height !== undefined);
 
-        const portEdges: Edge[] = [];
-
-        let placement = "OUTSIDE H_LEFT V_TOP";
+        let labelPlacement = "OUTSIDE H_LEFT V_TOP";
 
         if (!child.koppla.skin?.options?.dynamic) {
-            for (const port of child.ports ?? []) {
-                assert(port.x !== undefined);
-                assert(port.y !== undefined);
+            const placements = portPlacements(child);
 
-                if (port.x === 0) {
-                    portEdges.push("W");
-                    continue;
-                }
-                if (port.x === child.width) {
-                    portEdges.push("E");
-                    continue;
-                }
-                if (port.y === 0) {
-                    portEdges.push("N");
-                    continue;
-                }
-                if (port.y === child.height) {
-                    portEdges.push("S");
-                    continue;
-                }
-            }
-
-            const placements: Record<Edge, string> = {
+            const labelPlacements: Record<PortPlacement, string> = {
                 N: "OUTSIDE H_CENTER V_TOP",
                 S: "OUTSIDE H_CENTER V_BOTTOM",
                 E: "OUTSIDE H_RIGHT V_CENTER",
                 W: "OUTSIDE H_LEFT V_CENTER",
             };
 
-            const edgePriorities: Edge[] = ["W", "E", "N", "S"];
+            const priorities: PortPlacement[] = ["W", "E", "N", "S"];
 
-            for (const edge of edgePriorities) {
-                if (!portEdges.includes(edge)) {
-                    placement = placements[edge];
+            for (const prio of priorities) {
+                if (!placements.includes(prio)) {
+                    labelPlacement = labelPlacements[prio];
                     break;
                 }
             }
         }
         child.layoutOptions = {
             ...child.layoutOptions,
-            "org.eclipse.elk.nodeLabels.placement": placement,
+            "org.eclipse.elk.nodeLabels.placement": labelPlacement,
         };
     }
 }

@@ -21,6 +21,76 @@ export function optimize(
     return root;
 }
 
+export function lockPortPlacements(preprocessed: KopplaELKRoot) {
+    for (const child of preprocessed.children) {
+        if (child.ports?.length === 2) {
+            const placements = new Set(portPlacements(child));
+            if (placements.size === 1) {
+                const [placement] = placements.values();
+                if (placement === "N" || placement === "S") {
+                    // We have a two port node with all ports placed north or south.
+                    // Lock ports to the east and west to hint better part rotation.
+                    child.layoutOptions = {
+                        ...child.layoutOptions,
+                        "elk.portConstraints": "FIXED_SIDE"
+                    };
+                    const [a, b] = child.ports;
+                    assert(a.x !== undefined);
+                    assert(b.x !== undefined);
+                    const westToEast = a.x < b.x;
+
+                    child.ports[0].layoutOptions = {
+                        ...child.ports[0].layoutOptions,
+                        "elk.port.side": westToEast ? "WEST" : "EAST",
+                    }
+                    child.ports[1].layoutOptions = {
+                        ...child.ports[1].layoutOptions,
+                        "elk.port.side": westToEast ? "EAST" : "WEST",
+                    }
+                }
+    
+            }
+        }
+    }
+}
+
+export type PortPlacement = "N" | "S" | "E" | "W";
+
+export function portPlacements(node: KopplaELKNode): PortPlacement[] {
+    const portEdges: PortPlacement[] = [];
+
+    const jnd = 1e-6;
+    const closeEnough = (a: number, b: number) => Math.abs(a - b) < jnd;
+
+    for (const port of node.ports ?? []) {
+        assert(port.x !== undefined);
+        assert(port.y !== undefined);
+        assert(node.width !== undefined);
+        assert(node.height !== undefined);
+
+        if (closeEnough(port.x, 0)) {
+            portEdges.push("W");
+            continue;
+        }
+        if (closeEnough(port.x, node.width)) {
+            portEdges.push("E");
+            continue;
+        }
+        if (closeEnough(port.y, 0)) {
+            portEdges.push("N");
+            continue;
+        }
+        if (closeEnough(port.y, node.height)) {
+            portEdges.push("S");
+            continue;
+        }
+
+        assert(false, "Unexpected port position");
+    }
+
+    return portEdges;
+}
+
 /**
  * Rotates a node to move ports to an optimal position according to a preprocessed graph.
  *
