@@ -88,8 +88,8 @@ The unit "ohm" or "o" will produce the ohm symbol, for example `10kohm` yields `
 
 SI prefixes `n` to `G` are supported and the letter `u` will produce the mu symbol: `µ`.
 
-> :warning: This prefix syntax causes units starting with the letter "u" to be misparsed.
-    For example the value `42 units` will be interpreted as 42 µnits (micro candela per square meter). Not likely to be a problem in your everyday schematic. :)
+> :warning: The prefix syntax causes units starting with the letter "u" to be misparsed.
+    For example the value `42 units` will be interpreted as 42 µnits (micro candela per square meter). Not likely to be a problem in your everyday schematic. :grinning:
 
 If no symbol is specified, the default symbol for the component type is used.
 Component ID and value must be separated by a colon if both are specified.
