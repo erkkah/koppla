@@ -15,7 +15,34 @@ Create electronic schematics in SVG format from readable code.
 
 ## Getting started
 
+`koppla` is a commandline tool based on Node.js. Developed on version 18, not tested elsewhere.
 
+The easiest way to launch koppla is by using npx:
+
+```console
+$ npx koppla -h
+
+usage:
+    koppla [options] <input.koppla>
+
+options:
+    -output=<output.svg>
+    -fontFile=<font.ttf>
+    -fontSize=<font size in pixels>
+    -watch
+    -port=<preview port, defaults to 8080>
+```
+
+## Preview server
+
+Use the `-watch` option to launch an auto-reloading preview of the schematic you are working on.
+No output file is generated in watch mode.
+
+## Fonts
+
+`koppla` requires a monospace font to function. By default, the included "Inconsolata Regular" is used.
+
+The font is embedded with each generated SVG. Before embedding the font is stripped based on the characters used in the schematic.
 
 ## Syntax
 
@@ -112,10 +139,27 @@ This whole block is a comment.
 
 ### Component definitions
 
+TBW
+
 ## Symbols
+
+TBW
+
+## Credits
+
+`koppla` could not have been built without these great components:
+
+* [peggy](https://peggyjs.org/)
+* [elkjs](https://github.com/kieler/elkjs)
+* [fast-xml-parser](https://github.com/NaturalIntelligence/fast-xml-parser)
+* [opentype.js](https://opentype.js.org/)
+* [svg-pathdata](https://github.com/nfroidure/svg-pathdata)
+* [Inconsolata Font](fonts/README.md)
+* [Electric Components Library](symbols/README.md)
 
 ## TODO
 
+* Complete main README sections (maybe even this one)
 * Add compaction strategy macro setting
 * Verify use of generic component
 * Add schematic label / legend support
