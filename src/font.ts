@@ -1,5 +1,5 @@
 import { readFile } from "fs/promises";
-import { Font, Glyph, parse } from "opentype.js";
+import { Font, Glyph, parse, Path } from "opentype.js";
 
 export interface LoadedFont {
     font?: Font;
@@ -40,7 +40,17 @@ export async function loadFont(path: string): Promise<Font> {
 }
 
 export function trimFont(font: Font, subset: string): Font {
-    const glyphs: Glyph[] = [];
+    const notdefGlyph = new Glyph({
+        name: '.notdef',
+        unicode: 0,
+        advanceWidth: 650,
+        path: new Path()
+    });
+
+    const glyphs: Glyph[] = [
+        notdefGlyph
+    ];
+
     // x is always used for measuring above
     if (!subset.includes("x")) {
         subset += "x";

@@ -28,16 +28,10 @@ export async function render(
         font = await loadFontFromFile(options.fontFile, options.fontSize);
     }
     const laidOut = await layout(schematic, skin, font, options);
-    /*
-    ??? Temporarily disable, since broken
     if (font.font) {
         const usedChars = charsInNode(laidOut);
         font = loadFontFromFont(trimFont(font.font, usedChars), options.fontSize);
     }
-    */
-   loadFontFromFont;
-   trimFont;
-   charsInNode;
     return renderSVG(laidOut as KopplaELKRoot, font, skin, !!options.drawBoxes);
 }
 
