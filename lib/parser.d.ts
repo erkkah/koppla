@@ -47,11 +47,24 @@ export interface ConnectionStatement {
     source: Node;
     connections: Connection[];
 }
+interface TypedString {
+    type: "String";
+    value: string;
+}
+interface TypedNumber {
+    type: "Number";
+    value: number;
+}
+interface TypedBoolean {
+    type: "Boolean";
+    value: boolean;
+}
+export declare type TypedValue = TypedString | TypedNumber | TypedBoolean;
 export interface Settings {
     type: "Settings";
     settings: Array<{
         key: string;
-        value: string;
+        value: TypedValue;
     }>;
     location: SourceLocation;
 }

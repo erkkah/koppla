@@ -1,4 +1,4 @@
-import { Schematic, Definition, Port, Value, Settings, SourceLocation } from "./parser";
+import { Schematic, Definition, Port, Value, Settings, SourceLocation, TypedValue } from "./parser";
 import { SymbolInfo, SymbolLibrary } from "./symbols";
 interface NodeID {
     ID: string;
@@ -27,7 +27,7 @@ export declare class CompiledSchematic {
     private ports;
     private components;
     private connections;
-    readonly settings: Record<string, string>;
+    readonly settings: Record<string, TypedValue>;
     private unresolvedIndex;
     private resolved;
     private getNodes;

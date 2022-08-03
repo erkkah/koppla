@@ -35,6 +35,9 @@ export async function layout(
 ): Promise<ELKNode> {
     const elk = new ELK();
 
+    let xposCounter = 1;
+    let hasInsOrOuts = false;
+
     const nodes: KopplaELKNode[] = schematic.nodes.map((node) => {
         const symbolInfo = node.symbolInfo;
         assert(symbolInfo !== undefined);
@@ -59,7 +62,7 @@ export async function layout(
                     : undefined;
 
                 return {
-                    id: `${node.ID}:P${terminal}`,
+                    id: `${node.ID}:${terminal}`,
                     x: portPoint.x,
                     y: portPoint.y,
                     width: 0,
@@ -73,9 +76,28 @@ export async function layout(
         const height = symbolSkin.size.y;
 
         let layoutOptions: Record<string, unknown> = {};
+        
         if (node.designator === "GND") {
-            layoutOptions["elk.layered.layering.layerConstraint"] = "LAST";
+            /*
+            	NONE
+                FIRST
+                FIRST_SEPARATE
+                LAST
+                LAST_SEPARATE
+            */
+            layoutOptions["elk.layered.layering.layerConstraint"] = "LAST_SEPARATE";
         }
+
+        let xpos = xposCounter++;
+        if (node.designator === "IN") {
+            xpos = 0;
+            hasInsOrOuts = true;
+        } else if (node.designator === "OUT") {
+            xpos = 999999;
+            hasInsOrOuts = true;
+        }
+        layoutOptions["elk.position"] = `(${xpos},0)`;
+
         if (symbolInfo.dynamic) {
             layoutOptions["elk.portConstraints"] = "FREE";
             layoutOptions["elk.portLabels.placement"] =
@@ -101,8 +123,8 @@ export async function layout(
 
     const edges: ELKEdge[] = schematic.edges.map((edge, index) => ({
         id: `E${index}`,
-        sources: [`${edge.source.ID}:P${edge.sourceTerminal}`],
-        targets: [`${edge.target.ID}:P${edge.targetTerminal}`],
+        sources: [`${edge.source.ID}:${edge.sourceTerminal}`],
+        targets: [`${edge.target.ID}:${edge.targetTerminal}`],
     }));
 
     const graph: KopplaELKRoot = {
@@ -115,21 +137,25 @@ export async function layout(
         .filter(([key]) => key.startsWith("elk."))
         .reduce((settings, setting) => {
             const [key, value] = setting;
-            settings[key] = value;
+            settings[key] = value.value;
             return settings;
-        }, {} as Record<string, string>);
+        }, {} as Record<string, string | number | boolean>);
 
     // https://www.eclipse.org/elk/reference/algorithms/org-eclipse-elk-layered.html
+    // http://rtsys.informatik.uni-kiel.de/elklive/index.html
     const layoutOptions: LayoutOptions = {
         "elk.algorithm": "layered",
         "elk.direction": "DOWN",
         "elk.edgeRouting": "ORTHOGONAL",
         "elk.spacing.labelLabel": 3,
-        "elk.layered.layering.strategy": "LONGEST_PATH",
+        "elk.layered.layering.strategy": "NETWORK_SIMPLEX",
         "elk.layered.nodePlacement.strategy": "BRANDES_KOEPF",
         "elk.layered.nodePlacement.bk.fixedAlignment": "RIGHTDOWN",
         "elk.layered.compaction.postCompaction.strategy": "LEFT",
         "elk.edge.thickness": 3.5,
+        //"elk.layered.feedbackEdges": true,
+        "elk.portConstraints": "FREE",
+        "elk.layered.crossingMinimization.semiInteractive": hasInsOrOuts,
         ...layoutOptionsFromSettings,
     };
 

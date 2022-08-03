@@ -10,6 +10,7 @@ import {
     Value,
     Settings,
     SourceLocation,
+    TypedValue,
 } from "./parser";
 import { SymbolInfo, SymbolLibrary } from "./symbols";
 
@@ -69,9 +70,11 @@ export interface CompiledNode {
 
 export class CompiledSchematic {
     private ports: CompiledPort[] = [];
-    private components: Array<CompiledDefinition & { ID: NodeID, symbolInfo?: SymbolInfo }> = [];
+    private components: Array<
+        CompiledDefinition & { ID: NodeID; symbolInfo?: SymbolInfo }
+    > = [];
     private connections: CompiledConnection[] = [];
-    readonly settings: Record<string, string> = {};
+    readonly settings: Record<string, TypedValue> = {};
     private unresolvedIndex = -1;
     private resolved = false;
 
@@ -108,7 +111,90 @@ export class CompiledSchematic {
     get edges(): Required<CompiledConnection>[] {
         assert(this.resolved, "Must resolve before fetching edges");
 
-        return this.connections as Required<CompiledConnection>[];
+        type RequiredConnectionList = Required<CompiledConnection>[];
+
+        // Networks are named by the first [source, terminal] that connects
+        const terminalToNetwork = new Map<string, [NodeID, string]>();
+
+        const unique: RequiredConnectionList = [];
+
+        for (const connection of this.connections as RequiredConnectionList) {
+            const sourceTerminal = `${connection.source.ID}:${connection.sourceTerminal}`;
+            const targetTerminal = `${connection.target.ID}:${connection.targetTerminal}`;
+
+            const sourceNetwork = terminalToNetwork.get(sourceTerminal);
+            const targetNetwork = terminalToNetwork.get(targetTerminal);
+
+            if (sourceNetwork === undefined && targetNetwork === undefined) {
+                // new network!
+                terminalToNetwork.set(sourceTerminal, [
+                    connection.source,
+                    connection.sourceTerminal,
+                ]);
+                terminalToNetwork.set(targetTerminal, [
+                    connection.target,
+                    connection.targetTerminal,
+                ]);
+                unique.push(connection);
+            } else if (sourceNetwork === undefined) {
+                // add source to target network
+                assert(targetNetwork !== undefined);
+                terminalToNetwork.set(sourceTerminal, targetNetwork);
+
+                unique.push({
+                    ...connection,
+                    target: targetNetwork[0],
+                    targetTerminal: targetNetwork[1],
+                });
+            } else if (targetNetwork === undefined) {
+                // add target to source network
+                assert(sourceNetwork !== undefined);
+                terminalToNetwork.set(targetTerminal, sourceNetwork);
+
+                unique.push({
+                    ...connection,
+                    source: sourceNetwork[0],
+                    sourceTerminal: sourceNetwork[1],
+                });
+            } else {
+                assert(sourceNetwork !== undefined);
+                assert(targetNetwork !== undefined);
+
+                if (sourceNetwork !== targetNetwork) {
+                    // New connection, merge networks
+                    for (const [
+                        terminal,
+                        network,
+                    ] of terminalToNetwork.entries()) {
+                        if (network === targetNetwork) {
+                            terminalToNetwork.set(terminal, sourceNetwork);
+                        }
+                    }
+                    unique.push({
+                        ...connection,
+                        source: sourceNetwork[0],
+                        sourceTerminal: sourceNetwork[1],
+                        target: targetNetwork[0],
+                        targetTerminal: targetNetwork[1],
+                    });
+                } else {
+                    // Existing connection, skip
+                }
+            }
+        }
+
+        const seen = new Set<string>();
+
+        return unique.filter((connection) => {
+            const sourceTerminal = `${connection.source.ID}:${connection.sourceTerminal}`;
+            const targetTerminal = `${connection.target.ID}:${connection.targetTerminal}`;
+            const connID = `${sourceTerminal}-${targetTerminal}`;
+            if (seen.has(connID)) {
+                return false;
+            }
+            seen.add(connID);
+            return true;
+        });
     }
 
     component(definition: CompiledDefinition): NodeID {
@@ -319,6 +405,8 @@ export class CompiledSchematic {
                     );
                 }
 
+                assert(sourceTerminal !== undefined);
+                assert(targetTerminal !== undefined);
                 connection.sourceTerminal = sourceTerminal;
                 connection.targetTerminal = targetTerminal;
             } catch (err) {
@@ -512,8 +600,9 @@ function compileDefinition(
     }
 
     if (typeFromSymbol !== undefined && designator !== typeFromSymbol.type) {
-        throw new Error(
-            `Mismatched component type ${designator} != ${typeFromSymbol.type}`
+        throw new CompilationError(
+            `Mismatched component type ${designator} != ${typeFromSymbol.type}`,
+            definition.location
         );
     }
 

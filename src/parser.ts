@@ -57,11 +57,28 @@ export interface ConnectionStatement {
     connections: Connection[];
 }
 
+interface TypedString {
+    type: "String";
+    value: string;
+}
+
+interface TypedNumber {
+    type: "Number";
+    value: number;
+}
+
+interface TypedBoolean {
+    type: "Boolean";
+    value: boolean;
+}
+
+export type TypedValue = TypedString | TypedNumber | TypedBoolean;
+
 export interface Settings {
     type: "Settings";
     settings: Array<{
         key: string;
-        value: string;
+        value: TypedValue;
     }>;
     location: SourceLocation;
 }
@@ -179,10 +196,29 @@ export function createParser(): Parser {
             location: location()
         };
     }
-    Setting = WSC key:AlphaNumeric WSC ":" WSC value:(QuotedString / Decimal / Integer / Boolean) WSC ","? {
+    Setting = WSC key:AlphaNumeric WSC ":" WSC value:TypedValue WSC ","? {
         return {
             key,
             value,
+        };
+    }
+    TypedValue = TypedQuotedString / TypedNumber / TypedBoolean
+    TypedQuotedString = quotedString:QuotedString {
+        return {
+            type: "String",
+            value: quotedString,
+        };
+    }
+    TypedNumber = number:(Decimal / Integer) {
+        return {
+            type: "Number",
+            value: Number(number),
+        };
+    }
+    TypedBoolean = bool:Boolean {
+        return {
+            type: "Boolean",
+            value: bool == "true",
         };
     }
     Port "port" = "<" kind:PortKind spec:PortSpecifier? symbol:Symbol? ">" {
