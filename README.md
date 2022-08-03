@@ -2,8 +2,6 @@
 
 Create electronic schematics in SVG format from readable code.
 
-
-
 ## Example
 
 ```
@@ -14,6 +12,10 @@ Create electronic schematics in SVG format from readable code.
 ```
 
 ![](examples/example.svg)
+
+## Getting started
+
+
 
 ## Syntax
 
@@ -114,9 +116,7 @@ This whole block is a comment.
 
 ## TODO
 
-* Add "h-flip" after rotation as possible optimization step
+* Add compaction strategy macro setting
+* Verify use of generic component
 * Add schematic label / legend support
-* Better error handling + reporting
-* Add option to render ohm symbol
 * Make component label / value drawing optional
-* Add watching build server
