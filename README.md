@@ -2,6 +2,11 @@
 
 Create electronic schematics in SVG format from readable code.
 
+__Use cases:__
+
+* Easily create schematics when tracing circuits
+* Illustrate small ideas and concepts
+
 ## Example
 
 ```
