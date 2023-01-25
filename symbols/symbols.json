@@ -3,6 +3,14 @@
         "ID": "resistor",
         "terminals": ["a", "b"]
     },
+    "NTC": {
+        "ID": "thermistor",
+        "terminals": ["a", "b"]
+    },
+    "PTC": {
+        "ID": "thermistor",
+        "terminals": ["a", "b"]
+    },
     "C": {
         "ID": "capacitor",
         "terminals": ["a", "b"]
