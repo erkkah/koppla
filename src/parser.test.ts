@@ -1,5 +1,5 @@
 import assert = require("assert");
-import { createParser, parse, Definition, Value } from "./parser";
+import { createParser, parse, Definition, Value, Settings } from "./parser";
 
 describe("parse comments", () => {
     it("parses single line comments", () => {
@@ -40,26 +40,44 @@ describe("parse settings", () => {
             a.string: "a string value",
             an.integer: 123,
             a.decimal: 3.14,
+            a.boolean: true
         }
         `);
         expect(schematic.body).toHaveLength(1);
         const [setting] = schematic.body;
         assert(setting.type === "Settings");
-        expect(setting).toMatchObject({
-            settings: [
-                {
-                    key: "a.string",
+        const expected: Settings["settings"] = [
+            {
+                key: "a.string",
+                value: {
+                    type: "String",
                     value: "a string value",
                 },
-                {
-                    key: "an.integer",
-                    value: "123",
+            },
+            {
+                key: "an.integer",
+                value: {
+                    type: "Number",
+                    value: 123,
                 },
-                {
-                    key: "a.decimal",
-                    value: "3.14",
+            },
+            {
+                key: "a.decimal",
+                value: {
+                    type: "Number",
+                    value: 3.14,
                 },
-            ],
+            },
+            {
+                key: "a.boolean",
+                value: {
+                    type: "Boolean",
+                    value: true,
+                },
+            },
+        ];
+        expect(setting).toMatchObject({
+            settings: expected,
         });
     });
 });
