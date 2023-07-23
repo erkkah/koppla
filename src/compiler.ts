@@ -19,9 +19,8 @@ class CompilationError extends Error {
         super(message);
         Object.setPrototypeOf(this, CompilationError.prototype);
         this.name = "Compilation Error";
-        this.stack = `${this.message}${"\n"} at ${this.location.source}:${
-            this.location.start.line
-        }:${this.location.start.column}`;
+        this.stack = `${this.message}${"\n"} at ${this.location.source}:${this.location.start.line
+            }:${this.location.start.column}`;
     }
 
     toString(): string {
@@ -358,15 +357,17 @@ export class CompiledSchematic {
                         );
                     }
                     sourceTerminal = connection.sourceTerminal;
-                    sourceSymbol.terminals.push(sourceTerminal);
+                    if (!sourceSymbol.terminals.includes(sourceTerminal)) {
+                        sourceSymbol.terminals.push(sourceTerminal);
+                    }
                 } else {
                     assert(sourceSymbol.terminals.length >= 1);
                     sourceTerminal =
                         connection.sourceTerminal ??
                         (sourceSymbol.terminals.length > 1
                             ? sourceSymbol.terminals[
-                                  connection.sourceFlipped ? 0 : 1
-                              ]
+                            connection.sourceFlipped ? 0 : 1
+                            ]
                             : sourceSymbol.terminals[0]);
                 }
 
@@ -379,17 +380,19 @@ export class CompiledSchematic {
                         );
                     }
                     targetTerminal = connection.targetTerminal;
-                    targetSymbol.terminals.push(targetTerminal);
+                    if (!targetSymbol.terminals.includes(targetTerminal)) {
+                        targetSymbol.terminals.push(targetTerminal);
+                    }
                 } else {
                     assert(targetSymbol.terminals.length >= 1);
                     assert(
                         !connection.targetFlipped ||
-                            targetSymbol.terminals.length >= 2
+                        targetSymbol.terminals.length >= 2
                     );
                     targetTerminal =
                         connection.targetTerminal ??
                         targetSymbol.terminals[
-                            connection.targetFlipped ? 1 : 0
+                        connection.targetFlipped ? 1 : 0
                         ];
                 }
 
