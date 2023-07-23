@@ -87,7 +87,7 @@ export class SymbolSkin {
                 if (["x", "y", "cx", "cy", "width", "height"].includes(name)) {
                     return String(Math.round(Number(value) * 1000) / 1000);
                 }
-                return value;
+                return String(value);
             },
         });
         return builder.build(this.svg);
