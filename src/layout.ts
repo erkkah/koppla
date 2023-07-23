@@ -58,7 +58,7 @@ export async function layout(
                 const portPoint = terminals[terminal];
                 if (portPoint === undefined) {
                     throw new Error(
-                        `Symbol ${symbolInfo.ID} terminal "${terminal}" not found in skin`
+                        `Symbol "${symbolInfo.ID}" terminal "${terminal}" not found in skin`
                     );
                 }
 

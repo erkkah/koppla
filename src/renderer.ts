@@ -35,8 +35,18 @@ export async function render(
     return renderSVG(laidOut as KopplaELKRoot, font, skin, !!options.drawBoxes);
 }
 
+function labelsInTree(node: ELKNode): Label[] {
+    const labels: Label[] = [
+        ...(node.labels ?? []).map((label) => label),
+        ...(node.ports ?? []).flatMap((port) => port.labels ?? []),
+        ...(node.children ?? []).flatMap((child) => labelsInTree(child)),
+    ];
+    return labels;
+}
+
 function charsInNode(node: ELKNode): string {
-    const labels = (node.children ?? []).flatMap((node) => node.labels ?? []);
+    const labels = labelsInTree(node);
+    
     const usedChars = new Set<string>;
     for (const label of labels) {
         for (const char of label.text) {
@@ -176,7 +186,7 @@ function renderSVG(
         font-weight: normal;
         fill: #000;
         stroke: none;
-        alignment-baseline: hanging;
+        dominant-baseline: hanging;
     }
     .textbg {
         fill: #FFFFFF;
