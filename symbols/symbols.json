@@ -3,6 +3,10 @@
         "ID": "resistor",
         "terminals": ["a", "b"]
     },
+    "POT": {
+        "ID": "potentiometer",
+        "terminals": ["a", "b", "w"]
+    },
     "NTC": {
         "ID": "thermistor",
         "terminals": ["a", "b"]
@@ -78,6 +82,38 @@
     "POPAMP": {
         "ID": "opamp_power",
         "terminals": ["+", "-", "out", "v+", "v-"]
+    },
+    "LINREG": {
+        "ID": "linreg",
+        "terminals": ["in", "gnd", "out"]
+    },
+    "AND": {
+        "ID": "and",
+        "terminals": ["a", "b", "c"]
+    },
+    "NAND": {
+        "ID": "nand",
+        "terminals": ["a", "b", "c"]
+    },
+    "OR": {
+        "ID": "or",
+        "terminals": ["a", "b", "c"]
+    },
+    "NOR": {
+        "ID": "nor",
+        "terminals": ["a", "b", "c"]
+    },
+    "XOR": {
+        "ID": "xor",
+        "terminals": ["a", "b", "c"]
+    },
+    "XNOR": {
+        "ID": "xnor",
+        "terminals": ["a", "b", "c"]
+    },
+    "INV": {
+        "ID": "inverter",
+        "terminals": ["a", "b"]
     },
     "IN": {
         "ID": "input",
